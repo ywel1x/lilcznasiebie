@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Licz na siebie! v33 Final Resource Fix</title>
+    <title>Licz na siebie! v37 Menu Flow</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -14,6 +14,7 @@
             --c-brain: #2196F3;
             --wood-dark: #4a2810;
             --wood-light: #8b4513;
+            --base-size: 220px;
         }
 
         * { box-sizing: border-box; }
@@ -88,7 +89,7 @@
         #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
-        /* --- GRA - WIZUALIZACJA BAZY (SPRITES GRID FIX) --- */
+        /* --- GRA --- */
         #game-area {
             flex: 1; position: relative; display: none;
             flex-direction: column; align-items: center; justify-content: center; 
@@ -96,14 +97,16 @@
         }
         
         #base-visual { 
-            width: 160px; height: 160px; 
+            width: var(--base-size); 
+            height: var(--base-size); 
             background-image: url('base_sprites.png');
             background-repeat: no-repeat;
-            background-size: 400% 200%;
+            background-size: calc(var(--base-size) * 4) calc(var(--base-size) * 2);
             image-rendering: pixelated; 
             z-index: 2; 
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.6));
             transition: transform 0.2s;
+            margin-top: 80px; 
         }
         
         #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
@@ -133,14 +136,21 @@
             padding: 20px; margin: -20px; 
         }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+        
+        /* --- POPRAWIONE POWIADOMIENIA (WRAP TEXT) --- */
         .floating-msg {
             position: absolute; font-size: 2rem; font-weight: bold; color: #fff; 
             text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 20;
-            animation: floatUpFade 2s forwards; width: 100%; text-align: center;
-            left: 50%; top: 40%; transform: translate(-50%, -50%);
-            white-space: nowrap; 
+            animation: floatUpFade 2s forwards; 
+            text-align: center;
+            /* Zmiany umożliwiające zawijanie tekstu */
+            white-space: normal; 
+            width: 90%;
+            left: 50%; top: 40%; 
+            transform: translate(-50%, -50%);
         }
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
+        /* Dostosowana animacja do wyśrodkowania */
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
 
         /* --- PANEL STEROWANIA --- */
@@ -149,14 +159,17 @@
             display: none; flex-direction: column; gap: 5px; z-index: 20;
             box-shadow: 0 -10px 20px rgba(0,0,0,0.8); flex-shrink: 0;
             padding-bottom: max(10px, env(safe-area-inset-bottom));
+            min-height: 350px; 
+            justify-content: flex-start; 
         }
         #math-panel {
             background: #000; color: var(--c-hp); font-size: 2.2rem; text-align: center;
             padding: 5px; border: 2px solid var(--c-hp); border-radius: 8px;
             min-height: 45px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+            flex-shrink: 0; 
         }
         #math-panel.locked { filter: blur(2px) grayscale(0.8); border-color: #555 !important; }
-        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 50px; transition: opacity 0.3s; }
+        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 50px; transition: opacity 0.3s; flex-shrink: 0; }
         .item-slot {
             width: 50px; height: 50px; background: #333; border: 2px solid #555; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
@@ -168,7 +181,7 @@
             font-size: 0.9rem; padding: 1px 5px; border-radius: 50%; font-weight: bold;
         }
         .day-locked { opacity: 0.5; filter: grayscale(0.8); }
-        .action-row { display: flex; gap: 8px; height: 55px; }
+        .action-row { display: flex; gap: 8px; height: 55px; flex-shrink: 0; }
         .ctrl-btn {
             font-family: 'VT323', monospace; border: none; border-radius: 6px;
             font-size: 1.4rem; color: #fff; cursor: pointer;
@@ -181,7 +194,7 @@
         #btn-build { background: #555; border-bottom: 4px solid #333; color: #aaa; }
         #btn-build.ready { background: var(--c-gold); color: #000; border-bottom: 4px solid #b8860b; animation: pulseGold 1s infinite; font-weight: bold; }
 
-        #keypad { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; height: 200px; margin-bottom: 5px; }
+        #keypad { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; height: 200px; margin-bottom: 5px; flex-shrink: 0; }
         .key { background: #444; font-size: 1.8rem; border-radius: 5px; border-bottom: 3px solid #222; flex: 1; font-family: 'VT323'; color:#fff; border:none; border-bottom: 3px solid #222; cursor: pointer;}
         .key:active { border-bottom: 0; transform:translateY(3px); }
         .key-ok { background: #2196F3; border-color: #0D47A1; }
@@ -204,10 +217,11 @@
             background-size: cover; background-position: center;
             z-index: 300;
             justify-content: flex-end; 
-            padding-bottom: 60px; 
+            padding-bottom: 80px; /* Zwiększony padding na dole dla stopki */
         }
         .app-version {
-            position: absolute; bottom: 5px; left: 5px;
+            position: absolute; bottom: 25px; /* Podniesione, żeby zrobić miejsce na stopkę */
+            left: 5px;
             font-size: 0.8rem; color: rgba(255,255,255,0.3); font-family: sans-serif;
         }
         
@@ -265,10 +279,17 @@
         <div id="flash-overlay" class="flash-red"></div>
 
         <div id="main-menu-screen" class="special-screen" style="display: flex;">
-            <button class="wood-btn" onclick="mainMenuStartGame()">URUCHOM GRĘ</button>
-            <button class="wood-btn" onclick="showDifficultySelect()">POZIOM TRUDNOŚCI</button>
-            <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000;">Aktualny poziom: <span id="current-diff-label" style="color:var(--c-gold)">ŁATWY</span></div>
-            <div class="app-version">v33.0 (Final Resource Fix)</div>
+            <button class="wood-btn" onclick="showDifficultySelect()">URUCHOM GRĘ</button>
+            
+            <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000; font-size: 1.2rem;">
+                Autorzy: <span style="color:var(--c-gold)">Alan Lewe i Sebastian Lewe</span>
+            </div>
+            
+            <div class="app-version">v37.0</div>
+            
+            <div style="position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.3); font-family: sans-serif;">
+                Wszystkie prawa zastrzeżone | 2025 Koszalin
+            </div>
         </div>
 
         <div id="difficulty-screen" class="special-screen">
@@ -369,11 +390,10 @@
         ];
 
         const items = {
-            potion: { name: "Zioła", cost: 35, icon: "🌿", desc: "+50 HP" },
-            bomb:   { name: "Wnyki",  cost: 90, icon: "⚙️", desc: "Zabija potwora" },
-            // ZMIANA: Ikona Barykady zmieniona na tarczę
-            shield: { name: "Barykada", cost: 60, icon: "🛡️", desc: "Blok (5s)" },
-            laser: { name: "Toporek", cost: 0, icon: "🪓", desc: "Atak specjalny" } 
+            potion: { name: "Zioła", cost: 100, icon: "🌿", desc: "+50 HP" },
+            bomb:   { name: "Pułapka",  cost: 100, icon: "⚙️", desc: "Zabija potwora" },
+            shield: { name: "Barykada", cost: 100, icon: "🛡️", desc: "Blok (5s)" },
+            laser: { name: "Toporek", cost: 100, icon: "🪓", desc: "Atak specjalny" } 
         };
 
         const monsterTypes = ['m-slime', 'm-goblin', 'm-eye', 'm-golem', 'm-fire', 'm-skeleton', 'm-mushroom', 'm-spider', 'm-ghost', 'm-minotaur'];
@@ -393,8 +413,7 @@
         };
 
         let math = { a:0, b:0, res:0, inp:"" };
-        let selectedTier = 1;
-
+        
         // --- SOUND SYSTEM ---
         const SoundSystem = {
             ctx: null,
@@ -551,7 +570,7 @@
         function showMainMenu() {
             document.getElementById('main-menu-screen').style.display = 'flex';
             document.getElementById('difficulty-screen').style.display = 'none';
-            updateDiffLabel();
+            // Usunięto: updateDiffLabel();
         }
 
         function showDifficultySelect() {
@@ -560,22 +579,16 @@
         }
 
         function selectTier(tier) {
-            selectedTier = tier;
-            showMainMenu(); 
-        }
-
-        function updateDiffLabel() {
-             document.getElementById('current-diff-label').innerText = mathConfig[selectedTier].label;
-        }
-
-        function mainMenuStartGame() {
             SoundSystem.init(); 
-            startGame(selectedTier);
+            startGame(tier); // Zmiana: Od razu startuje grę
         }
+
+        // Usunięto funkcję updateDiffLabel()
+        // Usunięto funkcję mainMenuStartGame()
 
         function startGame(tier) {
             state.mathTier = tier;
-            document.getElementById('main-menu-screen').style.display = 'none';
+            document.getElementById('difficulty-screen').style.display = 'none'; // Zmiana: ukrywa ekran trudności
             document.body.classList.remove('night'); 
             document.getElementById('hud').style.display = 'flex';
             document.getElementById('game-area').style.display = 'flex';
@@ -777,7 +790,7 @@
                 res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60,
                 isShielded: false, inv: { potion: 1, bomb: 0, shield: 0, laser: 0 }, 
                 inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null,
-                mathTier: selectedTier, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
+                mathTier: 1, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
             };
             
             document.getElementById('game-over-screen').style.display = 'none';
@@ -1028,13 +1041,16 @@
                     costIcon = item.res === 'wood' ? '🪵' : (item.res === 'stone' ? '🪨' : '🔩');
                 }
 
+                // ZMIANA: Użycie zmiennej base-size do obliczeń w JS
+                const baseSize = 220;
                 const cols = 4;
                 const colIdx = i % cols;
                 const rowIdx = Math.floor(i / cols);
-                const xPos = colIdx * (100 / (cols - 1));
-                const yPos = rowIdx * 100;
+                
+                const xPos = -(colIdx * baseSize);
+                const yPos = -(rowIdx * baseSize);
 
-                let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}% ${yPos}%;"></div>`;
+                let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}px ${yPos}px; background-size: ${baseSize*4}px ${baseSize*2}px"></div>`;
 
                 const div = document.createElement('div');
                 div.className = `card ${canBuy ? 'affordable' : ''}`;
@@ -1100,12 +1116,17 @@
             document.getElementById('res-count').innerText = state.res;
             document.getElementById('gold-count').innerText = state.gold;
             
+            // ZMIANA: Użycie zmiennej base-size do obliczeń w JS
+            const baseSize = 220;
             const cols = 4;
             const colIdx = state.lvl % cols;
             const rowIdx = Math.floor(state.lvl / cols);
-            const xPos = colIdx * (100 / (cols - 1));
-            const yPos = rowIdx * 100;
-            document.getElementById('base-visual').style.backgroundPosition = `${xPos}% ${yPos}%`;
+            
+            // Używamy ujemnych pikseli do przesunięcia tła
+            const xPos = -(colIdx * baseSize);
+            const yPos = -(rowIdx * baseSize);
+            
+            document.getElementById('base-visual').style.backgroundPosition = `${xPos}px ${yPos}px`;
             
             document.getElementById('base-name').innerText = lvl.name;
             document.getElementById('base-def').innerText = lvl.def;
