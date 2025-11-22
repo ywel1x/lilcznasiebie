@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Licz na siebie! v25 Clean Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <title>Licz na siebie! v26</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -20,21 +20,43 @@
 
         * { box-sizing: border-box; }
 
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             background: #111;
             color: #fff;
             font-family: 'VT323', monospace;
-            margin: 0; height: 100vh; width: 100vw; overflow: hidden;
+            margin: 0; 
+            padding: 0;
+            
+            /* FIX NA CHOWANIE SIĘ POD PASKIEM ADRESU */
+            position: fixed; /* Sztywne przyklejenie do ekranu */
+            top: 0; left: 0; right: 0; bottom: 0;
+            height: 100dvh; /* Dynamic Viewport Height - klucz do sukcesu na mobile */
+            
             display: flex; justify-content: center; align-items: center;
             touch-action: manipulation; user-select: none;
+            
+            /* Safe Area padding bezpośrednio na body */
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
+        /* GŁÓWNY KONTENER GRY */
         #main-container {
-            position: relative; width: 100%; height: 100%;
-            max-width: 600px; 
-            background: #000; overflow: hidden; display: flex; flex-direction: column;
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            max-width: 600px; /* Ograniczenie szerokości na tabletach/PC */
+            background: #000; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
         }
 
+        /* Tła gry */
         .game-bg {
             position: absolute; top:0; left:0; width:100%; height:100%; z-index: -1;
             transition: opacity 2s ease; opacity: 0;
@@ -44,6 +66,7 @@
         body.night #bg-day { opacity: 0; }
         body.night #bg-night { opacity: 1; }
 
+        /* PRZYCISKI DREWNIANE */
         .wood-btn {
             font-family: 'VT323', monospace; font-size: 2.2rem;
             color: #f0e68c;
@@ -61,6 +84,7 @@
             border-radius: 12px; pointer-events: none;
         }
 
+        /* HUD */
         #hud {
             display: none; justify-content: space-between; align-items: center;
             padding: 8px 5px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #555;
@@ -74,10 +98,12 @@
         #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
+        /* EKRAN GRY */
         #game-area {
-            flex: 1; position: relative; display: none;
-            flex-direction: column; align-items: center; justify-content: center; overflow: hidden; 
-            width: 100%;
+            flex: 1; /* Zajmuje resztę miejsca */
+            position: relative; display: none;
+            flex-direction: column; align-items: center; justify-content: center; 
+            overflow: hidden; width: 100%;
         }
         #base-visual { font-size: 6rem; z-index: 2; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s; }
         #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
@@ -87,6 +113,7 @@
             font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
         }
         
+        /* Potwór - skalowanie */
         #monster {
             width: 25vh; height: 25vh; max-width: 150px; max-height: 150px;
             position: absolute; top: 15%; opacity: 0; z-index: 4;
@@ -100,6 +127,7 @@
         .m-mushroom { background-position: 25% 100%; } .m-spider { background-position: 50% 100%; }
         .m-ghost { background-position: 75% 100%; } .m-minotaur { background-position: 100% 100%; }
 
+        /* LOOT & NOTIFICATIONS */
         .dropped-item {
             position: absolute; font-size: 4rem; cursor: pointer; z-index: 15;
             animation: bounce 1s infinite alternate; filter: drop-shadow(0 0 15px gold);
@@ -115,21 +143,25 @@
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
 
+        /* DOLNY PANEL */
         #controls {
-            background: #222; padding: 5px 10px 10px 10px; border-top: 3px solid #555;
-            display: none; flex-direction: column; gap: 8px; z-index: 20;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.8); min-height: 340px; flex-shrink: 0;
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            background: #222; padding: 5px 10px; border-top: 3px solid #555;
+            display: none; flex-direction: column; gap: 5px; z-index: 20;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.8); 
+            flex-shrink: 0; /* Nie zgniataj */
+            
+            /* Bardzo ważne dla mobile: */
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
         #math-panel {
             background: #000; color: var(--c-hp); font-size: 2.2rem; text-align: center;
-            padding: 10px; border: 2px solid var(--c-hp); border-radius: 8px;
-            min-height: 50px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+            padding: 5px; border: 2px solid var(--c-hp); border-radius: 8px;
+            min-height: 45px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
         }
         #math-panel.locked { filter: blur(2px) grayscale(0.8); border-color: #555 !important; }
-        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 55px; transition: opacity 0.3s; }
+        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 50px; transition: opacity 0.3s; }
         .item-slot {
-            width: 55px; height: 55px; background: #333; border: 2px solid #555; border-radius: 8px;
+            width: 50px; height: 50px; background: #333; border: 2px solid #555; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
             position: relative; cursor: pointer; transition: all 0.1s;
         }
@@ -139,7 +171,7 @@
             font-size: 0.9rem; padding: 1px 5px; border-radius: 50%; font-weight: bold;
         }
         .day-locked { opacity: 0.5; filter: grayscale(0.8); }
-        .action-row { display: flex; gap: 8px; height: 60px; }
+        .action-row { display: flex; gap: 8px; height: 55px; }
         .ctrl-btn {
             font-family: 'VT323', monospace; border: none; border-radius: 6px;
             font-size: 1.4rem; color: #fff; cursor: pointer;
@@ -152,13 +184,14 @@
         #btn-build { background: #555; border-bottom: 4px solid #333; color: #aaa; }
         #btn-build.ready { background: var(--c-gold); color: #000; border-bottom: 4px solid #b8860b; animation: pulseGold 1s infinite; font-weight: bold; }
 
-        #keypad { display: none; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 220px; }
-        .key { background: #444; font-size: 2rem; border-radius: 5px; border-bottom: 3px solid #222; flex: 1; font-family: 'VT323'; color:#fff; border:none; border-bottom: 3px solid #222; cursor: pointer;}
+        #keypad { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; height: 200px; margin-bottom: 5px; }
+        .key { background: #444; font-size: 1.8rem; border-radius: 5px; border-bottom: 3px solid #222; flex: 1; font-family: 'VT323'; color:#fff; border:none; border-bottom: 3px solid #222; cursor: pointer;}
         .key:active { border-bottom: 0; transform:translateY(3px); }
         .key-ok { background: #2196F3; border-color: #0D47A1; }
         .key-fix { background: #FF9800; border-color: #E65100; font-size: 1.5rem; }
         #keypad.inactive { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
+        /* EKRANY SPECJALNE */
         .special-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 200; display: none; 
@@ -174,6 +207,18 @@
             justify-content: flex-end; 
             padding-bottom: 60px; 
         }
+        
+        /* WERSJA APLIKACJI */
+        .app-version {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+            font-family: sans-serif;
+        }
+        
+        .title-container { position: relative; margin-bottom: 50px; transform: rotate(-5deg); }
         
         #difficulty-screen { background: rgba(0,0,0,0.95); z-index: 250; }
         #era-screen { background: linear-gradient(45deg, #332b00, #000); border: 5px solid var(--c-gold); }
@@ -222,6 +267,7 @@
             <button class="wood-btn" onclick="mainMenuStartGame()">URUCHOM GRĘ</button>
             <button class="wood-btn" onclick="showDifficultySelect()">POZIOM TRUDNOŚCI</button>
             <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000;">Aktualny poziom: <span id="current-diff-label" style="color:var(--c-gold)">ŁATWY</span></div>
+            <div class="app-version">v26.0</div>
         </div>
 
         <div id="difficulty-screen" class="special-screen">
@@ -345,7 +391,7 @@
         let math = { a:0, b:0, res:0, inp:"" };
         let selectedTier = 1;
 
-        // --- SOUND SYSTEM ---
+        // --- SOUND SYSTEM (FIXED) ---
         const SoundSystem = {
             ctx: null,
             dayOsc: [],
@@ -366,14 +412,15 @@
             },
 
             setupAmbience: function() {
-                // Dzień: Spokojne akordy (C Major)
+                // Dzień: BARDZO NISKI, CICHY SZUM (Wind drone)
                 this.dayGain = this.ctx.createGain();
                 this.dayGain.gain.value = 0;
                 this.dayGain.connect(this.ctx.destination);
                 
-                [261.63, 329.63, 392.00].forEach(freq => { 
+                // Używamy bardzo niskich częstotliwości (110Hz, 130Hz) dla efektu wiatru
+                [110, 130.81].forEach(freq => { 
                     let osc = this.ctx.createOscillator();
-                    osc.type = 'sine';
+                    osc.type = 'sine'; // Sinusoida jest miękka
                     osc.frequency.value = freq;
                     osc.connect(this.dayGain);
                     osc.start();
@@ -406,7 +453,8 @@
                 const time = 2; 
 
                 if (phase === 'day') {
-                    this.dayGain.gain.setTargetAtTime(0.1, now, time); 
+                    // BARDZO CICHO dla dnia (0.02)
+                    this.dayGain.gain.setTargetAtTime(0.02, now, time); 
                     this.nightGain.gain.setTargetAtTime(0, now, time);
                 } else {
                     this.dayGain.gain.setTargetAtTime(0, now, time);
@@ -512,7 +560,7 @@
         }
 
         function mainMenuStartGame() {
-            SoundSystem.init(); // Inicjalizacja Audio
+            SoundSystem.init(); 
             startGame(selectedTier);
         }
 
@@ -523,7 +571,7 @@
             document.getElementById('hud').style.display = 'flex';
             document.getElementById('game-area').style.display = 'flex';
             document.getElementById('controls').style.display = 'flex';
-            SoundSystem.setAmbience('day'); // Start muzyki dnia
+            SoundSystem.setAmbience('day'); 
             init();
         }
 
@@ -570,7 +618,7 @@
             }
 
             document.getElementById('night-screen').style.display = 'flex';
-            SoundSystem.playSFX('win'); // Dźwięk sukcesu
+            SoundSystem.playSFX('win'); 
         }
 
         function showNotification(text, isGold = false) {
@@ -582,7 +630,7 @@
         }
 
         function startDay() {
-            SoundSystem.setAmbience('day'); // Muzyka dnia
+            SoundSystem.setAmbience('day'); 
             document.getElementById('night-screen').style.display = 'none'; 
             state.phase = 'day';
             state.timeLeft = 60;
@@ -604,8 +652,8 @@
         }
 
         function startNight() {
-            SoundSystem.setAmbience('night'); // Muzyka nocy
-            SoundSystem.playSFX('ui'); // Alarm
+            SoundSystem.setAmbience('night'); 
+            SoundSystem.playSFX('ui'); 
             closeModals();
             state.phase = 'night';
             state.timeLeft = 60;
@@ -672,7 +720,7 @@
         }
 
         function takeDamage(amt) {
-            SoundSystem.playSFX('hit'); // Dźwięk obrażeń
+            SoundSystem.playSFX('hit'); 
             state.hp -= amt;
             updateUI();
             document.getElementById('game-area').classList.add('shake-screen');
@@ -768,7 +816,7 @@
             if(state.inputLocked) return;
             math.inp += n; 
             updateMathDisplay(); 
-            SoundSystem.playSFX('ui'); // Kliknięcie
+            SoundSystem.playSFX('ui'); 
         }
         function clearInput() { 
             if(state.inputLocked) return;
@@ -783,7 +831,7 @@
                 updateProgression();
                 success();
             } else {
-                SoundSystem.playSFX('hit'); // Dźwięk błędu
+                SoundSystem.playSFX('hit'); 
                 document.getElementById('math-panel').style.borderColor = "red";
                 state.mistakes.push(`${math.a} × ${math.b} = ${math.res}`);
                 state.streak = 0;
@@ -806,12 +854,12 @@
                 bar.style.width = "0%";
                 showNotification("+1 SERIA BEZBŁĘDNA!", true);
                 spawnLoot('laser', 1);
-                SoundSystem.playSFX('win'); // Dźwięk serii
+                SoundSystem.playSFX('win'); 
             }
         }
 
         function success() {
-            SoundSystem.playSFX('win'); // Dźwięk sukcesu
+            SoundSystem.playSFX('win'); 
             if(state.phase === 'day') {
                 spawnLoot('resource', 5 + state.night); 
                 if(Math.random() < 0.5) spawnLoot('gold', Math.floor(Math.random()*10) + 15);
@@ -852,7 +900,6 @@
             document.getElementById('keypad').style.display = 'none'; 
         }
 
-        /* --- FIX 3: LOOT ZAWSZE WIDOCZNY I WEWNĄTRZ OKNA GRY --- */
         function spawnLoot(type, amount) {
             const el = document.createElement('div');
             el.className = 'dropped-item';
@@ -866,8 +913,6 @@
 
             el.innerText = icon;
             
-            // Ograniczamy pozycję do środka okna (20-80% szerokości, 20-60% wysokości)
-            // Żeby nie chowało się pod UI
             el.style.left = (20 + Math.random() * 60) + '%';
             el.style.top = (20 + Math.random() * 40) + '%';
             
@@ -878,15 +923,13 @@
                 float.innerText = type === 'gold' ? `+${amount}` : (type === 'resource' ? `+${amount}` : type.toUpperCase());
                 float.style.color = color;
                 
-                // Przypinamy komunikat do #game-area, żeby nie uciekał
                 document.getElementById('game-area').appendChild(float);
                 
                 setTimeout(()=>float.remove(), 1500);
                 el.remove();
-                SoundSystem.playSFX('win'); // Dźwięk zebrania
+                SoundSystem.playSFX('win'); 
             };
 
-            // Ważne: append do game-area, a nie main-container
             document.getElementById('game-area').appendChild(el);
             setTimeout(() => { if(el.parentNode) el.remove(); }, 8000);
         }
@@ -912,22 +955,22 @@
                 state.inv[type]--;
                 if(type === 'potion') { 
                     state.hp = Math.min(state.hp + 50, state.maxHp);
-                    SoundSystem.playSFX('potion'); // Dźwięk leczenia
+                    SoundSystem.playSFX('potion'); 
                 }
                 else if(type === 'bomb') { 
                     if(state.mathMode==='defend') {
-                        SoundSystem.playSFX('bomb'); // Dźwięk bomby
+                        SoundSystem.playSFX('bomb'); 
                         success(); 
                     }
                 }
                 else if(type === 'laser') { 
                     if(state.mathMode==='defend') {
-                        SoundSystem.playSFX('laser'); // Dźwięk lasera
+                        SoundSystem.playSFX('laser'); 
                         success(); 
                     }
                 }
                 else if(type === 'shield') {
-                    SoundSystem.playSFX('shield'); // Dźwięk tarczy
+                    SoundSystem.playSFX('shield'); 
                     state.isShielded = true;
                     document.getElementById('game-area').style.border = "5px solid #00e5ff";
                     setTimeout(()=>{ 
@@ -983,7 +1026,7 @@
                 state.inv[key]++;
                 updateUI();
                 openShop(); 
-                SoundSystem.playSFX('ui'); // Dźwięk kupna
+                SoundSystem.playSFX('ui'); 
             }
         }
 
@@ -1000,7 +1043,7 @@
                 }
                 updateUI();
                 closeModals();
-                SoundSystem.playSFX('win'); // Dźwięk ulepszenia
+                SoundSystem.playSFX('win'); 
             }
         }
 
