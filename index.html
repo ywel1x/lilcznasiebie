@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Licz na siebie! v26</title>
+    <title>Licz na siebie! v27 (Backgrounds)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -12,61 +12,67 @@
             --c-danger: #ff3333;
             --c-gold: #ffd700;
             --c-brain: #2196F3;
-            --bg-day: linear-gradient(180deg, #4a90e2 0%, #87ceeb 100%);
-            --bg-night: radial-gradient(circle, #1a0000 0%, #000000 100%);
             --wood-dark: #4a2810;
             --wood-light: #8b4513;
         }
 
         * { box-sizing: border-box; }
 
-        html {
-            height: 100%;
-            overflow: hidden;
-        }
+        html { height: 100%; overflow: hidden; }
 
         body {
             background: #111;
             color: #fff;
             font-family: 'VT323', monospace;
-            margin: 0; 
-            padding: 0;
-            
-            /* FIX NA CHOWANIE SIĘ POD PASKIEM ADRESU */
-            position: fixed; /* Sztywne przyklejenie do ekranu */
-            top: 0; left: 0; right: 0; bottom: 0;
-            height: 100dvh; /* Dynamic Viewport Height - klucz do sukcesu na mobile */
-            
+            margin: 0; padding: 0;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            height: 100dvh; 
             display: flex; justify-content: center; align-items: center;
             touch-action: manipulation; user-select: none;
-            
-            /* Safe Area padding bezpośrednio na body */
             padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* GŁÓWNY KONTENER GRY */
         #main-container {
-            position: relative; 
-            width: 100%; 
-            height: 100%; 
-            max-width: 600px; /* Ograniczenie szerokości na tabletach/PC */
-            background: #000; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column;
+            position: relative; width: 100%; height: 100%;
+            max-width: 600px; 
+            background: #000; overflow: hidden; display: flex; flex-direction: column;
         }
 
-        /* Tła gry */
+        /* --- TŁA GRY (OBRAZKI) --- */
         .game-bg {
-            position: absolute; top:0; left:0; width:100%; height:100%; z-index: -1;
-            transition: opacity 2s ease; opacity: 0;
+            position: absolute; top:0; left:0; width:100%; height:100%; z-index: -2;
+            transition: opacity 1.5s ease; /* Dissolve */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
-        #bg-day { background: var(--bg-day); opacity: 1; }
-        #bg-night { background: var(--bg-night); }
+        
+        #bg-day { 
+            background-image: url('day.png'); 
+            opacity: 1; 
+        }
+        
+        #bg-night { 
+            background-image: url('night.png'); 
+            opacity: 0; 
+        }
+
+        /* Logika przełączania teł (body.night) */
         body.night #bg-day { opacity: 0; }
         body.night #bg-night { opacity: 1; }
 
-        /* PRZYCISKI DREWNIANE */
+        /* --- WARSTWA PRZEJŚCIA (FADE TO BLACK/WHITE) --- */
+        #transition-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; /* Nad tłami, pod grą */
+            background: transparent;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        /* ELEMENTY UI (DREWNO) */
         .wood-btn {
             font-family: 'VT323', monospace; font-size: 2.2rem;
             color: #f0e68c;
@@ -100,8 +106,7 @@
 
         /* EKRAN GRY */
         #game-area {
-            flex: 1; /* Zajmuje resztę miejsca */
-            position: relative; display: none;
+            flex: 1; position: relative; display: none;
             flex-direction: column; align-items: center; justify-content: center; 
             overflow: hidden; width: 100%;
         }
@@ -113,7 +118,7 @@
             font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
         }
         
-        /* Potwór - skalowanie */
+        /* Potwór */
         #monster {
             width: 25vh; height: 25vh; max-width: 150px; max-height: 150px;
             position: absolute; top: 15%; opacity: 0; z-index: 4;
@@ -148,9 +153,7 @@
             background: #222; padding: 5px 10px; border-top: 3px solid #555;
             display: none; flex-direction: column; gap: 5px; z-index: 20;
             box-shadow: 0 -10px 20px rgba(0,0,0,0.8); 
-            flex-shrink: 0; /* Nie zgniataj */
-            
-            /* Bardzo ważne dla mobile: */
+            flex-shrink: 0;
             padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
         #math-panel {
@@ -207,15 +210,9 @@
             justify-content: flex-end; 
             padding-bottom: 60px; 
         }
-        
-        /* WERSJA APLIKACJI */
         .app-version {
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.3);
-            font-family: sans-serif;
+            position: absolute; bottom: 5px; left: 5px;
+            font-size: 0.8rem; color: rgba(255,255,255,0.3); font-family: sans-serif;
         }
         
         .title-container { position: relative; margin-bottom: 50px; transform: rotate(-5deg); }
@@ -225,7 +222,6 @@
         #era-icon { font-size: 7rem; margin-bottom: 20px; animation: bounce 1s infinite; }
         #night-screen { background: linear-gradient(180deg, #001133 0%, #000000 100%); border: 5px solid #2196F3; }
         #game-over-screen { background: #000; border: 5px solid red; overflow-y: auto;}
-        
         #mistakes-list { text-align: left; margin-top: 10px; font-size: 1.3rem; color: #ffaaaa; }
         
         .btn-next, .close-btn {
@@ -261,13 +257,16 @@
         
         <div id="bg-day" class="game-bg"></div>
         <div id="bg-night" class="game-bg"></div>
+        
+        <div id="transition-layer"></div>
+        
         <div id="flash-overlay" class="flash-red"></div>
 
         <div id="main-menu-screen" class="special-screen" style="display: flex;">
             <button class="wood-btn" onclick="mainMenuStartGame()">URUCHOM GRĘ</button>
             <button class="wood-btn" onclick="showDifficultySelect()">POZIOM TRUDNOŚCI</button>
             <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000;">Aktualny poziom: <span id="current-diff-label" style="color:var(--c-gold)">ŁATWY</span></div>
-            <div class="app-version">v26.0</div>
+            <div class="app-version">v27.0</div>
         </div>
 
         <div id="difficulty-screen" class="special-screen">
@@ -391,7 +390,7 @@
         let math = { a:0, b:0, res:0, inp:"" };
         let selectedTier = 1;
 
-        // --- SOUND SYSTEM (FIXED) ---
+        // --- SOUND SYSTEM (UPDATED: QUIET DAY) ---
         const SoundSystem = {
             ctx: null,
             dayOsc: [],
@@ -412,15 +411,14 @@
             },
 
             setupAmbience: function() {
-                // Dzień: BARDZO NISKI, CICHY SZUM (Wind drone)
+                // Dzień: BARDZO CICHO, NISKI SZUM (Wind)
                 this.dayGain = this.ctx.createGain();
                 this.dayGain.gain.value = 0;
                 this.dayGain.connect(this.ctx.destination);
                 
-                // Używamy bardzo niskich częstotliwości (110Hz, 130Hz) dla efektu wiatru
                 [110, 130.81].forEach(freq => { 
                     let osc = this.ctx.createOscillator();
-                    osc.type = 'sine'; // Sinusoida jest miękka
+                    osc.type = 'sine';
                     osc.frequency.value = freq;
                     osc.connect(this.dayGain);
                     osc.start();
@@ -453,8 +451,7 @@
                 const time = 2; 
 
                 if (phase === 'day') {
-                    // BARDZO CICHO dla dnia (0.02)
-                    this.dayGain.gain.setTargetAtTime(0.02, now, time); 
+                    this.dayGain.gain.setTargetAtTime(0.02, now, time); // Bardzo cicho
                     this.nightGain.gain.setTargetAtTime(0, now, time);
                 } else {
                     this.dayGain.gain.setTargetAtTime(0, now, time);
@@ -538,6 +535,15 @@
                 }
             }
         };
+
+        function playTransition(color) {
+            const t = document.getElementById('transition-layer');
+            t.style.backgroundColor = color;
+            t.style.opacity = 1;
+            setTimeout(() => {
+                t.style.opacity = 0;
+            }, 1000); 
+        }
 
         function showMainMenu() {
             document.getElementById('main-menu-screen').style.display = 'flex';
@@ -630,6 +636,7 @@
         }
 
         function startDay() {
+            playTransition('white');
             SoundSystem.setAmbience('day'); 
             document.getElementById('night-screen').style.display = 'none'; 
             state.phase = 'day';
@@ -652,6 +659,7 @@
         }
 
         function startNight() {
+            playTransition('black');
             SoundSystem.setAmbience('night'); 
             SoundSystem.playSFX('ui'); 
             closeModals();
@@ -913,6 +921,8 @@
 
             el.innerText = icon;
             
+            // Ograniczamy pozycję do środka okna (20-80% szerokości, 20-60% wysokości)
+            // Żeby nie chowało się pod UI
             el.style.left = (20 + Math.random() * 60) + '%';
             el.style.top = (20 + Math.random() * 40) + '%';
             
