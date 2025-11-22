@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Licz na siebie! v27 (Backgrounds)</title>
+    <title>Licz na siebie! v33 Final Resource Fix</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -30,49 +30,34 @@
             display: flex; justify-content: center; align-items: center;
             touch-action: manipulation; user-select: none;
             padding-bottom: env(safe-area-inset-bottom);
+            padding-top: env(safe-area-inset-top);
         }
 
-        /* GŁÓWNY KONTENER GRY */
         #main-container {
             position: relative; width: 100%; height: 100%;
             max-width: 600px; 
-            background: #000; overflow: hidden; display: flex; flex-direction: column;
+            background: transparent; 
+            overflow: hidden; display: flex; flex-direction: column;
         }
 
-        /* --- TŁA GRY (OBRAZKI) --- */
+        /* --- TŁA --- */
         .game-bg {
             position: absolute; top:0; left:0; width:100%; height:100%; z-index: -2;
-            transition: opacity 1.5s ease; /* Dissolve */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            transition: opacity 1.5s ease;
+            background-size: cover; background-position: center; background-repeat: no-repeat;
         }
-        
-        #bg-day { 
-            background-image: url('day.png'); 
-            opacity: 1; 
-        }
-        
-        #bg-night { 
-            background-image: url('night.png'); 
-            opacity: 0; 
-        }
-
-        /* Logika przełączania teł (body.night) */
+        #bg-day { background-image: url('day.png'); opacity: 1; }
+        #bg-night { background-image: url('night.png'); opacity: 0; }
         body.night #bg-day { opacity: 0; }
         body.night #bg-night { opacity: 1; }
 
-        /* --- WARSTWA PRZEJŚCIA (FADE TO BLACK/WHITE) --- */
         #transition-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; /* Nad tłami, pod grą */
-            background: transparent;
-            opacity: 0;
-            pointer-events: none;
+            z-index: -1; background: transparent; opacity: 0; pointer-events: none;
             transition: opacity 0.8s ease-in-out;
         }
 
-        /* ELEMENTY UI (DREWNO) */
+        /* --- UI DREWNIANE --- */
         .wood-btn {
             font-family: 'VT323', monospace; font-size: 2.2rem;
             color: #f0e68c;
@@ -90,12 +75,11 @@
             border-radius: 12px; pointer-events: none;
         }
 
-        /* HUD */
+        /* --- HUD --- */
         #hud {
             display: none; justify-content: space-between; align-items: center;
             padding: 8px 5px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #555;
             font-size: 1.3rem; z-index: 10; width: 100%; flex-shrink: 0;
-            padding-top: max(8px, env(safe-area-inset-top));
         }
         .hud-stat { display: flex; align-items: center; gap: 3px; }
         #timer-box { font-size: 1.6rem; font-weight: bold; }
@@ -104,13 +88,24 @@
         #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
-        /* EKRAN GRY */
+        /* --- GRA - WIZUALIZACJA BAZY (SPRITES GRID FIX) --- */
         #game-area {
             flex: 1; position: relative; display: none;
             flex-direction: column; align-items: center; justify-content: center; 
             overflow: hidden; width: 100%;
         }
-        #base-visual { font-size: 6rem; z-index: 2; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+        
+        #base-visual { 
+            width: 160px; height: 160px; 
+            background-image: url('base_sprites.png');
+            background-repeat: no-repeat;
+            background-size: 400% 200%;
+            image-rendering: pixelated; 
+            z-index: 2; 
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); 
+            transition: transform 0.2s;
+        }
+        
         #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
         #monster-power {
             position: absolute; top: 10%; right: 10%; background: #300; border: 2px solid var(--c-danger);
@@ -118,21 +113,20 @@
             font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
         }
         
-        /* Potwór */
         #monster {
             width: 25vh; height: 25vh; max-width: 150px; max-height: 150px;
             position: absolute; top: 15%; opacity: 0; z-index: 4;
-            background-image: url('potwory.png'); background-size: 500% 200%; 
+            background-image: url('potwory.png'); 
+            background-size: 500% 200%; 
             image-rendering: pixelated; filter: drop-shadow(0 0 15px rgba(255,0,0,0.7));
             transition: transform 0.5s linear;
         }
-        .m-slime { background-position: 0% 0%; } .m-goblin { background-position: 25% 0%; }
-        .m-eye { background-position: 50% 0%; } .m-golem { background-position: 75% 0%; }
-        .m-fire { background-position: 100% 0%; } .m-skeleton { background-position: 0% 100%; }
+        .m-slime { background-position: 0% 0%; }     .m-goblin { background-position: 25% 0%; }
+        .m-eye { background-position: 50% 0%; }      .m-golem { background-position: 75% 0%; }
+        .m-fire { background-position: 100% 0%; }    .m-skeleton { background-position: 0% 100%; }
         .m-mushroom { background-position: 25% 100%; } .m-spider { background-position: 50% 100%; }
-        .m-ghost { background-position: 75% 100%; } .m-minotaur { background-position: 100% 100%; }
+        .m-ghost { background-position: 75% 100%; }  .m-minotaur { background-position: 100% 100%; }
 
-        /* LOOT & NOTIFICATIONS */
         .dropped-item {
             position: absolute; font-size: 4rem; cursor: pointer; z-index: 15;
             animation: bounce 1s infinite alternate; filter: drop-shadow(0 0 15px gold);
@@ -144,17 +138,17 @@
             text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 20;
             animation: floatUpFade 2s forwards; width: 100%; text-align: center;
             left: 50%; top: 40%; transform: translate(-50%, -50%);
+            white-space: nowrap; 
         }
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
 
-        /* DOLNY PANEL */
+        /* --- PANEL STEROWANIA --- */
         #controls {
             background: #222; padding: 5px 10px; border-top: 3px solid #555;
             display: none; flex-direction: column; gap: 5px; z-index: 20;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.8); 
-            flex-shrink: 0;
-            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.8); flex-shrink: 0;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
         #math-panel {
             background: #000; color: var(--c-hp); font-size: 2.2rem; text-align: center;
@@ -194,12 +188,14 @@
         .key-fix { background: #FF9800; border-color: #E65100; font-size: 1.5rem; }
         #keypad.inactive { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
-        /* EKRANY SPECJALNE */
+        /* --- EKRANY --- */
         .special-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 200; display: none; 
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center; padding: 20px;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
         
         #main-menu-screen {
@@ -214,8 +210,6 @@
             position: absolute; bottom: 5px; left: 5px;
             font-size: 0.8rem; color: rgba(255,255,255,0.3); font-family: sans-serif;
         }
-        
-        .title-container { position: relative; margin-bottom: 50px; transform: rotate(-5deg); }
         
         #difficulty-screen { background: rgba(0,0,0,0.95); z-index: 250; }
         #era-screen { background: linear-gradient(45deg, #332b00, #000); border: 5px solid var(--c-gold); }
@@ -236,13 +230,23 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 100; display: none; 
             flex-direction: column; padding: 15px; align-items: stretch; 
-            padding-top: calc(10px + env(safe-area-inset-top));
+            padding-top: calc(20px + env(safe-area-inset-top));
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .modal h2 { text-align: center; color: #fff; border-bottom: 1px solid #555; padding-bottom: 10px; }
         .card-list { overflow-y: auto; flex: 1; }
         .card { background: #222; margin-bottom: 10px; padding: 12px; border: 2px solid #444; display: flex; align-items: center; gap: 12px; border-radius: 8px; }
         .card.affordable { border-color: var(--c-gold); background: #332b00; }
         .btn-buy { background: var(--c-gold); color: #000; font-weight: bold; padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; flex-grow: 0; font-family:'VT323'; }
+
+        .menu-sprite {
+            width: 60px; height: 60px;
+            background-image: url('base_sprites.png');
+            background-size: 400% 200%;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            border-radius: 8px; border: 2px solid #333;
+        }
 
         @keyframes pulseTime { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); color: red; } }
         @keyframes pulseGold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 15px var(--c-gold); } }
@@ -257,16 +261,14 @@
         
         <div id="bg-day" class="game-bg"></div>
         <div id="bg-night" class="game-bg"></div>
-        
         <div id="transition-layer"></div>
-        
         <div id="flash-overlay" class="flash-red"></div>
 
         <div id="main-menu-screen" class="special-screen" style="display: flex;">
             <button class="wood-btn" onclick="mainMenuStartGame()">URUCHOM GRĘ</button>
             <button class="wood-btn" onclick="showDifficultySelect()">POZIOM TRUDNOŚCI</button>
             <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000;">Aktualny poziom: <span id="current-diff-label" style="color:var(--c-gold)">ŁATWY</span></div>
-            <div class="app-version">v27.0</div>
+            <div class="app-version">v33.0 (Final Resource Fix)</div>
         </div>
 
         <div id="difficulty-screen" class="special-screen">
@@ -306,7 +308,7 @@
         <div id="hud">
             <div class="hud-stat">🌙 <span id="night-val">1</span></div>
             <div class="hud-stat" title="Seria poprawnych">🧠 <div class="bar-container"><div id="prog-fill"></div></div></div>
-            <div class="hud-stat"><span id="res-icon">🌲</span> <span id="res-count" style="color:orange">0</span></div>
+            <div class="hud-stat"><span id="res-icon">🪵</span> <span id="res-count" style="color:orange">0</span></div>
             <div class="hud-stat">💰 <span id="gold-count" style="color:gold">0</span></div>
             <div id="timer-box">60s</div>
             <div class="hud-stat">❤️ <div class="bar-container" style="width:80px;"><div id="hp-fill"></div></div></div>
@@ -314,7 +316,8 @@
 
         <div id="game-area">
             <div id="monster-power">⚔️ ATAK: <span id="m-dmg">0</span></div>
-            <div id="monster"></div> <div id="base-visual">⛺</div>
+            <div id="monster"></div> 
+            <div id="base-visual"></div>
             <div id="base-info">
                 <div id="base-name" style="font-size: 1.2rem; font-weight:bold;">Namiot</div>
                 <div style="color:#ccc; font-size:0.9rem;">🛡️ Pancerz: <span id="base-def">1</span></div>
@@ -322,13 +325,13 @@
         </div>
 
         <div id="build-menu" class="modal">
-            <h2>ULEPSZ BAZĘ</h2>
+            <h2>ULEPSZ OBÓZ</h2>
             <div id="build-list" class="card-list"></div>
             <button class="close-btn" onclick="closeModals()">ZAMKNIJ</button>
         </div>
 
         <div id="shop-menu" class="modal">
-            <h2>SKLEP</h2>
+            <h2>SKLEP SURVIVALA</h2>
             <div id="shop-list" class="card-list"></div>
             <button class="close-btn" onclick="closeModals()">ZAMKNIJ</button>
         </div>
@@ -336,10 +339,10 @@
         <div id="controls">
             <div id="math-panel">Gotowy?</div>
             <div id="inventory-bar" class="day-locked">
-                <div class="item-slot" id="slot-potion" onclick="useItem('potion')">💊 <div class="item-count" id="count-potion">1</div></div>
-                <div class="item-slot" id="slot-bomb" onclick="useItem('bomb')">💣 <div class="item-count" id="count-bomb">0</div></div>
+                <div class="item-slot" id="slot-potion" onclick="useItem('potion')">🌿 <div class="item-count" id="count-potion">1</div></div>
+                <div class="item-slot" id="slot-bomb" onclick="useItem('bomb')">⚙️ <div class="item-count" id="count-bomb">0</div></div>
                 <div class="item-slot" id="slot-shield" onclick="useItem('shield')">🛡️ <div class="item-count" id="count-shield">0</div></div>
-                <div class="item-slot" id="slot-laser" onclick="useItem('laser')" style="border-color: #2196F3">⚡ <div class="item-count" id="count-laser">0</div></div>
+                <div class="item-slot" id="slot-laser" onclick="useItem('laser')" style="border-color: #2196F3">🪓 <div class="item-count" id="count-laser">0</div></div>
             </div>
             <div id="action-buttons" class="action-row">
                 <button class="ctrl-btn" id="btn-gather" onclick="startGatherTask()">⛏️ ZBIERAJ</button>
@@ -356,19 +359,21 @@
 
     </div> <script>
         const levels = [
-            { lvl: 1, name: "Namiot", res: "wood", cost: 0, icon: "⛺", hp: 120, def: 1 },
-            { lvl: 2, name: "Palisada", res: "wood", cost: 20, icon: "⛺🚧", hp: 180, def: 2 },
-            { lvl: 3, name: "Chatka", res: "wood", cost: 40, icon: "🛖", hp: 300, def: 4 },
-            { lvl: 4, name: "Dom", res: "stone", cost: 30, icon: "🏠", hp: 450, def: 8 },
-            { lvl: 5, name: "Zamek", res: "stone", cost: 80, icon: "🏰", hp: 700, def: 16 },
-            { lvl: 6, name: "Bunkier", res: "metal", cost: 60, icon: "🏢", hp: 1200, def: 28 },
-            { lvl: 7, name: "Stalowa Forteca", res: "metal", cost: 150, icon: "🏯", hp: 2500, def: 45 }
+            { lvl: 1, name: "Szałas", res: "wood", cost: 0, hp: 120, def: 1 },
+            { lvl: 2, name: "Mały Namiot", res: "wood", cost: 20, hp: 180, def: 3 },
+            { lvl: 3, name: "Ognisko", res: "wood", cost: 40, hp: 300, def: 6 },
+            { lvl: 4, name: "Zasieki", res: "wood", cost: 80, hp: 450, def: 10 },
+            { lvl: 5, name: "Kamienny Krąg", res: "stone", cost: 50, hp: 750, def: 20 },
+            { lvl: 6, name: "Wieża", res: "stone", cost: 100, hp: 1300, def: 35 },
+            { lvl: 7, name: "Leśna Twierdza", res: "stone", cost: 200, hp: 3000, def: 60 }
         ];
 
         const items = {
-            potion: { name: "Apteczka", cost: 50, icon: "💊", desc: "+50 HP" },
-            bomb:   { name: "Dynamit",  cost: 100, icon: "💣", desc: "Zabija potwora" },
-            shield: { name: "Tarcza",   cost: 80, icon: "🛡️", desc: "Blok (5s)" }
+            potion: { name: "Zioła", cost: 35, icon: "🌿", desc: "+50 HP" },
+            bomb:   { name: "Wnyki",  cost: 90, icon: "⚙️", desc: "Zabija potwora" },
+            // ZMIANA: Ikona Barykady zmieniona na tarczę
+            shield: { name: "Barykada", cost: 60, icon: "🛡️", desc: "Blok (5s)" },
+            laser: { name: "Toporek", cost: 0, icon: "🪓", desc: "Atak specjalny" } 
         };
 
         const monsterTypes = ['m-slime', 'm-goblin', 'm-eye', 'm-golem', 'm-fire', 'm-skeleton', 'm-mushroom', 'm-spider', 'm-ghost', 'm-minotaur'];
@@ -390,7 +395,7 @@
         let math = { a:0, b:0, res:0, inp:"" };
         let selectedTier = 1;
 
-        // --- SOUND SYSTEM (UPDATED: QUIET DAY) ---
+        // --- SOUND SYSTEM ---
         const SoundSystem = {
             ctx: null,
             dayOsc: [],
@@ -411,7 +416,6 @@
             },
 
             setupAmbience: function() {
-                // Dzień: BARDZO CICHO, NISKI SZUM (Wind)
                 this.dayGain = this.ctx.createGain();
                 this.dayGain.gain.value = 0;
                 this.dayGain.connect(this.ctx.destination);
@@ -425,7 +429,6 @@
                     this.dayOsc.push(osc);
                 });
 
-                // Noc: Mroczne drony
                 this.nightGain = this.ctx.createGain();
                 this.nightGain.gain.value = 0;
                 this.nightGain.connect(this.ctx.destination);
@@ -451,7 +454,7 @@
                 const time = 2; 
 
                 if (phase === 'day') {
-                    this.dayGain.gain.setTargetAtTime(0.02, now, time); // Bardzo cicho
+                    this.dayGain.gain.setTargetAtTime(0.02, now, time); 
                     this.nightGain.gain.setTargetAtTime(0, now, time);
                 } else {
                     this.dayGain.gain.setTargetAtTime(0, now, time);
@@ -912,17 +915,16 @@
             const el = document.createElement('div');
             el.className = 'dropped-item';
             let icon = "❓"; let color = "#fff";
+            // ZMIANA: Surowiec drewno to teraz KŁODA
             if(type === 'gold') { icon = "💰"; color="gold"; }
-            else if(type === 'resource') { icon = levels[state.lvl].res === 'wood' ? '🌲' : (levels[state.lvl].res === 'stone' ? '🪨' : '🔩'); color="orange"; }
-            else if(type === 'potion') icon = "💊";
-            else if(type === 'bomb') icon = "💣";
+            else if(type === 'resource') { icon = levels[state.lvl].res === 'wood' ? '🪵' : (levels[state.lvl].res === 'stone' ? '🪨' : '🔩'); color="orange"; }
+            else if(type === 'potion') icon = "🌿";
+            else if(type === 'bomb') icon = "⚙️";
             else if(type === 'shield') icon = "🛡️";
-            else if(type === 'laser') { icon = "⚡"; color = "#2196F3"; }
+            else if(type === 'laser') { icon = "🪓"; color = "#2196F3"; }
 
             el.innerText = icon;
             
-            // Ograniczamy pozycję do środka okna (20-80% szerokości, 20-60% wysokości)
-            // Żeby nie chowało się pod UI
             el.style.left = (20 + Math.random() * 60) + '%';
             el.style.top = (20 + Math.random() * 40) + '%';
             
@@ -930,7 +932,19 @@
                 collectLoot(type, amount);
                 const float = document.createElement('div');
                 float.className = 'floating-msg';
-                float.innerText = type === 'gold' ? `+${amount}` : (type === 'resource' ? `+${amount}` : type.toUpperCase());
+
+                let msgContent = "";
+                if(type === 'gold') {
+                    msgContent = `+${amount} 💰`;
+                } else if(type === 'resource') {
+                    // ZMIANA: Ikona surowca w powiadomieniu
+                    let rIcon = levels[state.lvl].res === 'wood' ? '🪵' : '🪨';
+                    msgContent = `+${amount} ${rIcon}`;
+                } else {
+                    msgContent = `${items[type].icon} ${items[type].name.toUpperCase()}`;
+                }
+
+                float.innerText = msgContent;
                 float.style.color = color;
                 
                 document.getElementById('game-area').appendChild(float);
@@ -1010,14 +1024,23 @@
                     if(i > state.lvl + 1) return;
                     isOwned = i <= state.lvl;
                     canBuy = (i === state.lvl + 1) && state.res >= item.cost;
-                    costIcon = item.res === 'wood' ? '🌲' : (item.res === 'stone' ? '🪨' : '🔩');
+                    // ZMIANA: Ikona kosztu budowy to teraz KŁODA
+                    costIcon = item.res === 'wood' ? '🪵' : (item.res === 'stone' ? '🪨' : '🔩');
                 }
+
+                const cols = 4;
+                const colIdx = i % cols;
+                const rowIdx = Math.floor(i / cols);
+                const xPos = colIdx * (100 / (cols - 1));
+                const yPos = rowIdx * 100;
+
+                let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}% ${yPos}%;"></div>`;
 
                 const div = document.createElement('div');
                 div.className = `card ${canBuy ? 'affordable' : ''}`;
                 div.style.opacity = isOwned ? 0.5 : 1;
                 div.innerHTML = `
-                    <div style="font-size:2rem">${item.icon}</div>
+                    ${iconHtml}
                     <div style="flex:1">
                         <div style="font-weight:bold">${item.name}</div>
                         <div style="font-size:0.8rem">${isShop ? item.desc : 'Def: ' + item.def}</div>
@@ -1070,12 +1093,20 @@
 
         function updateUI() {
             const lvl = levels[state.lvl];
-            let rIcon = lvl.res === 'wood' ? '🌲' : (lvl.res === 'stone' ? '🪨' : '🔩');
+            // ZMIANA: Ikona surowca w HUD to teraz KŁODA
+            let rIcon = lvl.res === 'wood' ? '🪵' : (lvl.res === 'stone' ? '🪨' : '🔩');
             document.getElementById('night-val').innerText = state.night;
             document.getElementById('res-icon').innerText = rIcon;
             document.getElementById('res-count').innerText = state.res;
             document.getElementById('gold-count').innerText = state.gold;
-            document.getElementById('base-visual').innerText = lvl.icon;
+            
+            const cols = 4;
+            const colIdx = state.lvl % cols;
+            const rowIdx = Math.floor(state.lvl / cols);
+            const xPos = colIdx * (100 / (cols - 1));
+            const yPos = rowIdx * 100;
+            document.getElementById('base-visual').style.backgroundPosition = `${xPos}% ${yPos}%`;
+            
             document.getElementById('base-name').innerText = lvl.name;
             document.getElementById('base-def').innerText = lvl.def;
             let pct = (state.hp / state.maxHp) * 100;
