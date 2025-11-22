@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Licz na siebie! v25</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Licz na siebie! v25 Audio</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -29,27 +29,24 @@
             touch-action: manipulation; user-select: none;
         }
 
-        /* GŁÓWNY KONTENER GRY - 9:16 */
         #main-container {
             position: relative; width: 100%; height: 100%;
-            aspect-ratio: 9 / 16; max-height: 100vh; max-width: calc(100vh * 9 / 16);
+            max-width: 600px; 
             background: #000; overflow: hidden; display: flex; flex-direction: column;
         }
 
-        /* Tła gry */
         .game-bg {
             position: absolute; top:0; left:0; width:100%; height:100%; z-index: -1;
-            transition: opacity 0.5s ease; opacity: 0;
+            transition: opacity 2s ease; opacity: 0;
         }
         #bg-day { background: var(--bg-day); opacity: 1; }
         #bg-night { background: var(--bg-night); }
         body.night #bg-day { opacity: 0; }
         body.night #bg-night { opacity: 1; }
 
-        /* PRZYCISKI DREWNIANE (Kłody) */
         .wood-btn {
             font-family: 'VT323', monospace; font-size: 2.2rem;
-            color: #f0e68c; /* Domyślny kolor jasnego drewna */
+            color: #f0e68c;
             background: linear-gradient(to bottom, var(--wood-light), var(--wood-dark));
             border: 4px solid #2e1a0a; border-radius: 15px;
             padding: 15px 20px; margin: 10px 0;
@@ -64,11 +61,11 @@
             border-radius: 12px; pointer-events: none;
         }
 
-        /* HUD */
         #hud {
             display: none; justify-content: space-between; align-items: center;
             padding: 8px 5px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #555;
             font-size: 1.3rem; z-index: 10; width: 100%; flex-shrink: 0;
+            padding-top: max(8px, env(safe-area-inset-top));
         }
         .hud-stat { display: flex; align-items: center; gap: 3px; }
         #timer-box { font-size: 1.6rem; font-weight: bold; }
@@ -77,10 +74,10 @@
         #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
-        /* EKRAN GRY */
         #game-area {
             flex: 1; position: relative; display: none;
             flex-direction: column; align-items: center; justify-content: center; overflow: hidden; 
+            width: 100%;
         }
         #base-visual { font-size: 6rem; z-index: 2; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s; }
         #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
@@ -89,8 +86,10 @@
             color: var(--c-danger); padding: 5px 10px; border-radius: 5px;
             font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
         }
+        
         #monster {
-            width: 150px; height: 150px; position: absolute; top: 15%; opacity: 0; z-index: 4;
+            width: 25vh; height: 25vh; max-width: 150px; max-height: 150px;
+            position: absolute; top: 15%; opacity: 0; z-index: 4;
             background-image: url('potwory.png'); background-size: 500% 200%; 
             image-rendering: pixelated; filter: drop-shadow(0 0 15px rgba(255,0,0,0.7));
             transition: transform 0.5s linear;
@@ -101,7 +100,6 @@
         .m-mushroom { background-position: 25% 100%; } .m-spider { background-position: 50% 100%; }
         .m-ghost { background-position: 75% 100%; } .m-minotaur { background-position: 100% 100%; }
 
-        /* LOOT & NOTIFICATIONS */
         .dropped-item {
             position: absolute; font-size: 4rem; cursor: pointer; z-index: 15;
             animation: bounce 1s infinite alternate; filter: drop-shadow(0 0 15px gold);
@@ -117,11 +115,11 @@
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
 
-        /* DOLNY PANEL */
         #controls {
             background: #222; padding: 5px 10px 10px 10px; border-top: 3px solid #555;
             display: none; flex-direction: column; gap: 8px; z-index: 20;
             box-shadow: 0 -10px 20px rgba(0,0,0,0.8); min-height: 340px; flex-shrink: 0;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
         #math-panel {
             background: #000; color: var(--c-hp); font-size: 2.2rem; text-align: center;
@@ -161,7 +159,6 @@
         .key-fix { background: #FF9800; border-color: #E65100; font-size: 1.5rem; }
         #keypad.inactive { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
-        /* EKRANY SPECJALNE */
         .special-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 200; display: none; 
@@ -169,39 +166,30 @@
             text-align: center; padding: 20px;
         }
         
-        /* NOWE MENU GŁÓWNE */
         #main-menu-screen {
             background-color: #111;
             background-image: url('backgroundmenu.png');
             background-size: cover; background-position: center;
             z-index: 300;
-            justify-content: flex-end; /* Przyciski na dole */
-            padding-bottom: 60px; /* Odstęp od dołu */
+            justify-content: flex-end; 
+            padding-bottom: 60px; 
         }
         
-        /* Kontener Tytułu */
-        .title-container {
-            position: relative; margin-bottom: 50px;
-            transform: rotate(-5deg); /* Lekki przechył */
-        }
-
+        .title-container { position: relative; margin-bottom: 50px; transform: rotate(-5deg); }
         #main-menu-screen h1 {
             font-size: 5rem; margin: 0; color: var(--c-gold);
             text-shadow: 4px 4px 0 #000, -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000;
             line-height: 0.9;
         }
-
         .subtitle {
             position: absolute; bottom: -25px; right: -10px;
             font-size: 2rem; color: var(--c-danger);
             text-shadow: 2px 2px 0 #000;
-            transform: rotate(-10deg); /* Przechył podtytułu */
+            transform: rotate(-10deg); 
             background: rgba(0,0,0,0.5); padding: 2px 10px; border-radius: 5px;
         }
         
-        /* EKRAN WYBORU TRUDNOŚCI */
         #difficulty-screen { background: rgba(0,0,0,0.95); z-index: 250; }
-        
         #era-screen { background: linear-gradient(45deg, #332b00, #000); border: 5px solid var(--c-gold); }
         #era-icon { font-size: 7rem; margin-bottom: 20px; animation: bounce 1s infinite; }
         #night-screen { background: linear-gradient(180deg, #001133 0%, #000000 100%); border: 5px solid #2196F3; }
@@ -215,13 +203,13 @@
         }
         .btn-next { background: #2196F3; color: #fff; box-shadow: 0 4px #0D47A1; }
         .btn-next:active { transform: translateY(4px); box-shadow: none; }
-        .close-btn { background: #d32f2f; color:#fff; box-shadow: 0 4px #9a0007; }
+        .close-btn { background: #d32f2f; color:#fff; box-shadow: 0 4px #9a0007; margin-bottom: 20px;}
 
-        /* MODALE */
         .modal { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 100; display: none; 
             flex-direction: column; padding: 15px; align-items: stretch; 
+            padding-top: calc(10px + env(safe-area-inset-top));
         }
         .modal h2 { text-align: center; color: #fff; border-bottom: 1px solid #555; padding-bottom: 10px; }
         .card-list { overflow-y: auto; flex: 1; }
@@ -376,17 +364,151 @@
         let math = { a:0, b:0, res:0, inp:"" };
         let selectedTier = 1;
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(freq, type='sine', dur=0.1) {
-            if(audioCtx.state==='suspended') audioCtx.resume();
-            const o = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.type = type; o.frequency.value = freq;
-            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
-            o.start(); o.stop(audioCtx.currentTime+dur);
-        }
+        // --- SOUND SYSTEM ---
+        const SoundSystem = {
+            ctx: null,
+            dayOsc: [],
+            nightOsc: [],
+            isMuted: false,
+
+            init: function() {
+                if(this.ctx) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                this.setupAmbience();
+            },
+
+            resume: function() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            setupAmbience: function() {
+                // Dzień: Spokojne akordy (C Major)
+                this.dayGain = this.ctx.createGain();
+                this.dayGain.gain.value = 0;
+                this.dayGain.connect(this.ctx.destination);
+                
+                [261.63, 329.63, 392.00].forEach(freq => { 
+                    let osc = this.ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    osc.connect(this.dayGain);
+                    osc.start();
+                    this.dayOsc.push(osc);
+                });
+
+                // Noc: Mroczne drony
+                this.nightGain = this.ctx.createGain();
+                this.nightGain.gain.value = 0;
+                this.nightGain.connect(this.ctx.destination);
+
+                [55, 110, 112].forEach(freq => { 
+                    let osc = this.ctx.createOscillator();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    let filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 400;
+                    osc.connect(filter);
+                    filter.connect(this.nightGain);
+                    osc.start();
+                    this.nightOsc.push(osc);
+                });
+            },
+
+            setAmbience: function(phase) {
+                if (!this.ctx) this.init();
+                this.resume();
+                const now = this.ctx.currentTime;
+                const time = 2; 
+
+                if (phase === 'day') {
+                    this.dayGain.gain.setTargetAtTime(0.1, now, time); 
+                    this.nightGain.gain.setTargetAtTime(0, now, time);
+                } else {
+                    this.dayGain.gain.setTargetAtTime(0, now, time);
+                    this.nightGain.gain.setTargetAtTime(0.15, now, time); 
+                }
+            },
+
+            playSFX: function(type) {
+                if (!this.ctx) this.init();
+                this.resume();
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                switch (type) {
+                    case 'hit': 
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(150, t);
+                        osc.frequency.exponentialRampToValueAtTime(40, t + 0.2);
+                        gain.gain.setValueAtTime(0.3, t);
+                        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                        osc.start(t); osc.stop(t + 0.2);
+                        break;
+
+                    case 'potion': 
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, t);
+                        osc.frequency.linearRampToValueAtTime(1200, t + 0.3);
+                        gain.gain.setValueAtTime(0.2, t);
+                        gain.gain.linearRampToValueAtTime(0, t + 0.5);
+                        osc.start(t); osc.stop(t + 0.5);
+                        break;
+
+                    case 'bomb': 
+                    case 'laser':
+                        const bufSize = this.ctx.sampleRate * 0.5;
+                        const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+                        const noise = this.ctx.createBufferSource();
+                        noise.buffer = buffer;
+                        const bombFilter = this.ctx.createBiquadFilter();
+                        bombFilter.type = 'lowpass';
+                        bombFilter.frequency.value = 800;
+                        noise.connect(bombFilter);
+                        bombFilter.connect(gain);
+                        gain.gain.setValueAtTime(0.5, t);
+                        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+                        noise.start(t);
+                        break;
+
+                    case 'shield': 
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(200, t);
+                        osc.frequency.linearRampToValueAtTime(600, t + 0.3);
+                        gain.gain.setValueAtTime(0.2, t);
+                        gain.gain.setValueAtTime(0.05, t + 0.1); 
+                        gain.gain.setValueAtTime(0.2, t + 0.2);
+                        gain.gain.linearRampToValueAtTime(0, t + 0.5);
+                        osc.start(t); osc.stop(t + 0.5);
+                        break;
+
+                    case 'ui': 
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(800, t);
+                        gain.gain.setValueAtTime(0.05, t);
+                        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                        osc.start(t); osc.stop(t + 0.05);
+                        break;
+                        
+                    case 'win': 
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(440, t);
+                        osc.frequency.setValueAtTime(554, t + 0.1); 
+                        gain.gain.setValueAtTime(0.1, t);
+                        gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                        osc.start(t); osc.stop(t + 0.3);
+                        break;
+                }
+            }
+        };
 
         function showMainMenu() {
             document.getElementById('main-menu-screen').style.display = 'flex';
@@ -409,6 +531,7 @@
         }
 
         function mainMenuStartGame() {
+            SoundSystem.init(); // Inicjalizacja Audio
             startGame(selectedTier);
         }
 
@@ -419,6 +542,7 @@
             document.getElementById('hud').style.display = 'flex';
             document.getElementById('game-area').style.display = 'flex';
             document.getElementById('controls').style.display = 'flex';
+            SoundSystem.setAmbience('day'); // Start muzyki dnia
             init();
         }
 
@@ -465,7 +589,7 @@
             }
 
             document.getElementById('night-screen').style.display = 'flex';
-            beep(600, 'sine', 0.5);
+            SoundSystem.playSFX('win'); // Dźwięk sukcesu
         }
 
         function showNotification(text, isGold = false) {
@@ -477,6 +601,7 @@
         }
 
         function startDay() {
+            SoundSystem.setAmbience('day'); // Muzyka dnia
             document.getElementById('night-screen').style.display = 'none'; 
             state.phase = 'day';
             state.timeLeft = 60;
@@ -498,6 +623,8 @@
         }
 
         function startNight() {
+            SoundSystem.setAmbience('night'); // Muzyka nocy
+            SoundSystem.playSFX('ui'); // Alarm
             closeModals();
             state.phase = 'night';
             state.timeLeft = 60;
@@ -508,7 +635,6 @@
             document.getElementById('keypad').style.display = 'grid';
             document.getElementById('keypad').classList.add('inactive');
             document.getElementById('math-panel').innerText = "NOC NADCHODZI...";
-            beep(150, 'sawtooth', 1.0);
             updateUI();
             spawnMonsterLoop();
         }
@@ -565,6 +691,7 @@
         }
 
         function takeDamage(amt) {
+            SoundSystem.playSFX('hit'); // Dźwięk obrażeń
             state.hp -= amt;
             updateUI();
             document.getElementById('game-area').classList.add('shake-screen');
@@ -573,7 +700,6 @@
                 document.getElementById('game-area').classList.remove('shake-screen');
                 document.getElementById('flash-overlay').style.opacity = 0;
             }, 100);
-            beep(80, 'sawtooth', 0.1);
             if(state.hp <= 0) gameOver();
         }
 
@@ -661,7 +787,7 @@
             if(state.inputLocked) return;
             math.inp += n; 
             updateMathDisplay(); 
-            beep(600, 'square', 0.05); 
+            SoundSystem.playSFX('ui'); // Kliknięcie
         }
         function clearInput() { 
             if(state.inputLocked) return;
@@ -676,7 +802,7 @@
                 updateProgression();
                 success();
             } else {
-                beep(100, 'sawtooth', 0.3);
+                SoundSystem.playSFX('hit'); // Dźwięk błędu
                 document.getElementById('math-panel').style.borderColor = "red";
                 state.mistakes.push(`${math.a} × ${math.b} = ${math.res}`);
                 state.streak = 0;
@@ -699,13 +825,12 @@
                 bar.style.width = "0%";
                 showNotification("+1 SERIA BEZBŁĘDNA!", true);
                 spawnLoot('laser', 1);
-                beep(1000, 'square', 0.1); 
-                setTimeout(() => beep(1500, 'square', 0.2), 150);
+                SoundSystem.playSFX('win'); // Dźwięk serii
             }
         }
 
         function success() {
-            beep(800, 'sine', 0.2);
+            SoundSystem.playSFX('win'); // Dźwięk sukcesu
             if(state.phase === 'day') {
                 spawnLoot('resource', 5 + state.night); 
                 if(Math.random() < 0.5) spawnLoot('gold', Math.floor(Math.random()*10) + 15);
@@ -746,6 +871,7 @@
             document.getElementById('keypad').style.display = 'none'; 
         }
 
+        /* --- FIX 3: LOOT ZAWSZE WIDOCZNY I WEWNĄTRZ OKNA GRY --- */
         function spawnLoot(type, amount) {
             const el = document.createElement('div');
             el.className = 'dropped-item';
@@ -758,8 +884,9 @@
             else if(type === 'laser') { icon = "⚡"; color = "#2196F3"; }
 
             el.innerText = icon;
+            
             el.style.left = (20 + Math.random() * 60) + '%';
-            el.style.top = (30 + Math.random() * 40) + '%';
+            el.style.top = (20 + Math.random() * 40) + '%';
             
             el.onclick = function(e) {
                 collectLoot(type, amount);
@@ -767,13 +894,13 @@
                 float.className = 'floating-msg';
                 float.innerText = type === 'gold' ? `+${amount}` : (type === 'resource' ? `+${amount}` : type.toUpperCase());
                 float.style.color = color;
-                document.getElementById('main-container').appendChild(float);
+                document.getElementById('game-area').appendChild(float);
                 setTimeout(()=>float.remove(), 1500);
                 el.remove();
-                beep(1200, 'sine', 0.1);
+                SoundSystem.playSFX('win'); // Dźwięk zebrania
             };
 
-            document.getElementById('main-container').appendChild(el);
+            document.getElementById('game-area').appendChild(el);
             setTimeout(() => { if(el.parentNode) el.remove(); }, 8000);
         }
 
@@ -796,10 +923,24 @@
             }
             if(state.inv[type] > 0) {
                 state.inv[type]--;
-                if(type === 'potion') state.hp = Math.min(state.hp + 50, state.maxHp);
-                else if(type === 'bomb') { if(state.mathMode==='defend') success(); }
-                else if(type === 'laser') { if(state.mathMode==='defend') success(); }
+                if(type === 'potion') { 
+                    state.hp = Math.min(state.hp + 50, state.maxHp);
+                    SoundSystem.playSFX('potion'); // Dźwięk leczenia
+                }
+                else if(type === 'bomb') { 
+                    if(state.mathMode==='defend') {
+                        SoundSystem.playSFX('bomb'); // Dźwięk bomby
+                        success(); 
+                    }
+                }
+                else if(type === 'laser') { 
+                    if(state.mathMode==='defend') {
+                        SoundSystem.playSFX('laser'); // Dźwięk lasera
+                        success(); 
+                    }
+                }
                 else if(type === 'shield') {
+                    SoundSystem.playSFX('shield'); // Dźwięk tarczy
                     state.isShielded = true;
                     document.getElementById('game-area').style.border = "5px solid #00e5ff";
                     setTimeout(()=>{ 
@@ -855,7 +996,7 @@
                 state.inv[key]++;
                 updateUI();
                 openShop(); 
-                beep(600, 'square', 0.2);
+                SoundSystem.playSFX('ui'); // Dźwięk kupna
             }
         }
 
@@ -872,7 +1013,7 @@
                 }
                 updateUI();
                 closeModals();
-                beep(600, 'square', 0.5);
+                SoundSystem.playSFX('win'); // Dźwięk ulepszenia
             }
         }
 
