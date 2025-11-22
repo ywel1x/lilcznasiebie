@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Licz na siebie! v37 Menu Flow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Licz na siebie! v51.0 (Animacje + Fixy)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -85,8 +85,14 @@
         .hud-stat { display: flex; align-items: center; gap: 3px; }
         #timer-box { font-size: 1.6rem; font-weight: bold; }
         .night #timer-box { color: var(--c-danger); animation: pulseTime 1s infinite; }
+        
         .bar-container { width: 50px; height: 12px; background: #333; border: 2px solid #fff; border-radius: 4px; overflow: hidden; position: relative; }
-        #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
+        
+        /* PASEK HP - POPRAWIONY */
+        .hud-bar-thick { height: 24px; width: 130px; position: relative; border: 3px solid #fff; border-radius: 8px; background: #333; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        #hp-fill { height: 100%; background: var(--c-hp); transition: width 0.2s; }
+        #hp-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center; line-height: 1; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; z-index: 2; letter-spacing: 1px; }
+
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
         /* --- GRA --- */
@@ -137,21 +143,31 @@
         }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
         
-        /* --- POPRAWIONE POWIADOMIENIA (WRAP TEXT) --- */
         .floating-msg {
             position: absolute; font-size: 2rem; font-weight: bold; color: #fff; 
             text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 20;
             animation: floatUpFade 2s forwards; 
             text-align: center;
-            /* Zmiany umożliwiające zawijanie tekstu */
             white-space: normal; 
             width: 90%;
             left: 50%; top: 40%; 
             transform: translate(-50%, -50%);
         }
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
-        /* Dostosowana animacja do wyśrodkowania */
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
+
+        /* --- NOWA ANIMACJA ZAKUPU --- */
+        .ui-feedback {
+            position: fixed;
+            font-size: 1.8rem; font-weight: bold; color: #0f0;
+            pointer-events: none; z-index: 1000;
+            animation: floatUpUI 0.8s forwards;
+            text-shadow: 1px 1px 0 #000;
+        }
+        @keyframes floatUpUI {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+        }
 
         /* --- PANEL STEROWANIA --- */
         #controls {
@@ -169,7 +185,19 @@
             flex-shrink: 0; 
         }
         #math-panel.locked { filter: blur(2px) grayscale(0.8); border-color: #555 !important; }
-        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 50px; transition: opacity 0.3s; flex-shrink: 0; }
+        
+        #top-controls-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px; }
+        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 50px; transition: opacity 0.3s; flex-grow: 1; }
+        
+        #btn-exit-game {
+            font-family: 'VT323', monospace; font-size: 1.5rem; color: #f0e68c;
+            background: linear-gradient(to bottom, var(--wood-light), var(--wood-dark));
+            border: 3px solid #2e1a0a; border-radius: 8px;
+            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; margin-left: 10px; flex-shrink: 0; box-shadow: 0 4px #1a0f05;
+        }
+        #btn-exit-game:active { transform: translateY(2px); box-shadow: 0 2px #1a0f05; }
+
         .item-slot {
             width: 50px; height: 50px; background: #333; border: 2px solid #555; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
@@ -201,7 +229,7 @@
         .key-fix { background: #FF9800; border-color: #E65100; font-size: 1.5rem; }
         #keypad.inactive { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
-        /* --- EKRANY --- */
+        /* --- EKRANY I MODALE --- */
         .special-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 200; display: none; 
@@ -217,17 +245,15 @@
             background-size: cover; background-position: center;
             z-index: 300;
             justify-content: flex-end; 
-            padding-bottom: 80px; /* Zwiększony padding na dole dla stopki */
+            padding-bottom: 80px; 
         }
         .app-version {
-            position: absolute; bottom: 25px; /* Podniesione, żeby zrobić miejsce na stopkę */
+            position: absolute; bottom: 25px; 
             left: 5px;
             font-size: 0.8rem; color: rgba(255,255,255,0.3); font-family: sans-serif;
         }
         
         #difficulty-screen { background: rgba(0,0,0,0.95); z-index: 250; }
-        #era-screen { background: linear-gradient(45deg, #332b00, #000); border: 5px solid var(--c-gold); }
-        #era-icon { font-size: 7rem; margin-bottom: 20px; animation: bounce 1s infinite; }
         #night-screen { background: linear-gradient(180deg, #001133 0%, #000000 100%); border: 5px solid #2196F3; }
         #game-over-screen { background: #000; border: 5px solid red; overflow-y: auto;}
         #mistakes-list { text-align: left; margin-top: 10px; font-size: 1.3rem; color: #ffaaaa; }
@@ -256,11 +282,20 @@
         .menu-sprite {
             width: 60px; height: 60px;
             background-image: url('base_sprites.png');
+            /* SKALOWANIE DO IKONY */
             background-size: 400% 200%;
             background-repeat: no-repeat;
             image-rendering: pixelated;
             border-radius: 8px; border: 2px solid #333;
         }
+        
+        .wood-modal-content {
+            background: url('day.png'); background-size: cover;
+            border: 5px solid #4a2810; border-radius: 15px;
+            padding: 25px; text-align: center; max-width: 90%; margin: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9); position: relative;
+        }
+        .wood-modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(60, 30, 10, 0.85); z-index: -1; border-radius: 10px; }
 
         @keyframes pulseTime { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); color: red; } }
         @keyframes pulseGold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 15px var(--c-gold); } }
@@ -280,13 +315,10 @@
 
         <div id="main-menu-screen" class="special-screen" style="display: flex;">
             <button class="wood-btn" onclick="showDifficultySelect()">URUCHOM GRĘ</button>
-            
             <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000; font-size: 1.2rem;">
                 Autorzy: <span style="color:var(--c-gold)">Alan Lewe i Sebastian Lewe</span>
             </div>
-            
-            <div class="app-version">v37.0</div>
-            
+            <div class="app-version">v51.0 (ANIMATIONS + ICON FIX)</div>
             <div style="position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.3); font-family: sans-serif;">
                 Wszystkie prawa zastrzeżone | 2025 Koszalin
             </div>
@@ -298,13 +330,7 @@
             <button class="wood-btn" style="color: #FF9800" onclick="selectTier(2)">ŚREDNI (do 20)</button>
             <button class="wood-btn" style="color: #F44336" onclick="selectTier(3)">TRUDNY (do 50)</button>
             <button class="wood-btn" style="color: #9C27B0" onclick="selectTier(4)">ULTRA (do 100)</button>
-        </div>
-
-        <div id="era-screen" class="special-screen">
-            <div id="era-icon">🪨</div>
-            <h1 style="color: gold; font-size: 3rem; margin: 10px 0;">NOWA EPOKA!</h1>
-            <p style="font-size: 1.5rem;">Zaczynasz zbierać <span id="era-name">KAMIEŃ</span>.</p>
-            <button class="btn-next" onclick="closeEraScreen()">ROZUMIEM!</button>
+            <button class="wood-btn" style="color: #aaa; border-color: #555; background: linear-gradient(to bottom, #666, #333);" onclick="showMainMenu()">WRÓĆ DO MENU</button>
         </div>
 
         <div id="night-screen" class="special-screen">
@@ -332,7 +358,7 @@
             <div class="hud-stat"><span id="res-icon">🪵</span> <span id="res-count" style="color:orange">0</span></div>
             <div class="hud-stat">💰 <span id="gold-count" style="color:gold">0</span></div>
             <div id="timer-box">60s</div>
-            <div class="hud-stat">❤️ <div class="bar-container" style="width:80px;"><div id="hp-fill"></div></div></div>
+            <div class="hud-stat">❤️ <div class="hud-bar-thick"><div id="hp-fill"></div><div id="hp-text">120/120</div></div></div>
         </div>
 
         <div id="game-area">
@@ -357,18 +383,37 @@
             <button class="close-btn" onclick="closeModals()">ZAMKNIJ</button>
         </div>
 
+        <div id="confirm-modal" class="modal" style="justify-content: center; align-items: center; background: rgba(0,0,0,0.85);">
+            <div class="wood-modal-content">
+                <div class="wood-modal-overlay"></div>
+                <h2 style="border:none; font-size: 1.8rem; margin-bottom: 20px; text-shadow: 2px 2px 4px #000; color: #fff;">
+                    Czy na pewno chcesz wrócić do menu głównego?<br>
+                    <span style="font-size: 1.2rem; color: #ccc;">Obecna gra zostanie zakończona.</span>
+                </h2>
+                <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+                    <button class="wood-btn" style="background: linear-gradient(to bottom, #d32f2f, #9a0007); border-color: #500; color: #fff; width: auto; padding: 10px 30px; flex:1;" onclick="hardReset()">TAK</button>
+                    <button class="wood-btn" style="background: linear-gradient(to bottom, #4CAF50, #2E7D32); border-color: #050; color: #fff; width: auto; padding: 10px 30px; flex:1;" onclick="closeConfirmModal()">GRAM DALEJ</button>
+                </div>
+            </div>
+        </div>
+
         <div id="controls">
             <div id="math-panel">Gotowy?</div>
-            <div id="inventory-bar" class="day-locked">
-                <div class="item-slot" id="slot-potion" onclick="useItem('potion')">🌿 <div class="item-count" id="count-potion">1</div></div>
-                <div class="item-slot" id="slot-bomb" onclick="useItem('bomb')">⚙️ <div class="item-count" id="count-bomb">0</div></div>
-                <div class="item-slot" id="slot-shield" onclick="useItem('shield')">🛡️ <div class="item-count" id="count-shield">0</div></div>
-                <div class="item-slot" id="slot-laser" onclick="useItem('laser')" style="border-color: #2196F3">🪓 <div class="item-count" id="count-laser">0</div></div>
+            
+            <div id="top-controls-row">
+                <div id="inventory-bar" class="day-locked">
+                    <div class="item-slot" id="slot-potion" onclick="useItem('potion')">🌿 <div class="item-count" id="count-potion">1</div></div>
+                    <div class="item-slot" id="slot-bomb" onclick="useItem('bomb')">⚙️ <div class="item-count" id="count-bomb">0</div></div>
+                    <div class="item-slot" id="slot-shield" onclick="useItem('shield')">🛡️ <div class="item-count" id="count-shield">0</div></div>
+                    <div class="item-slot" id="slot-laser" onclick="useItem('laser')" style="border-color: #2196F3">🪓 <div class="item-count" id="count-laser">0</div></div>
+                </div>
+                <button id="btn-exit-game" onclick="showConfirmModal()">X</button>
             </div>
+
             <div id="action-buttons" class="action-row">
                 <button class="ctrl-btn" id="btn-gather" onclick="startGatherTask()">⛏️ ZBIERAJ</button>
                 <button class="ctrl-btn" id="btn-shop" onclick="openShop()">🛒 SKLEP</button>
-                <button class="ctrl-btn" id="btn-build" onclick="openBuild()">🔨 BAZA</button>
+                <button class="ctrl-btn" id="btn-build" onclick="openBuild()">⛺ BAZA</button>
             </div>
             <div id="keypad">
                 <button class="key" onclick="input(1)">1</button><button class="key" onclick="input(2)">2</button><button class="key" onclick="input(3)">3</button>
@@ -379,6 +424,18 @@
         </div>
 
     </div> <script>
+        // --- DANE ---
+        const MATH_DATA = { 1: [], 2: [], 3: [], 4: [] };
+        for (let a = 1; a <= 10; a++) {
+            for (let b = 1; b <= 10; b++) {
+                const p = a * b;
+                if (p <= 10) MATH_DATA[1].push({a, b});
+                if (p <= 20) MATH_DATA[2].push({a, b});
+                if (p <= 50) MATH_DATA[3].push({a, b});
+                if (p <= 100) MATH_DATA[4].push({a, b}); 
+            }
+        }
+
         const levels = [
             { lvl: 1, name: "Szałas", res: "wood", cost: 0, hp: 120, def: 1 },
             { lvl: 2, name: "Mały Namiot", res: "wood", cost: 20, hp: 180, def: 3 },
@@ -390,20 +447,14 @@
         ];
 
         const items = {
-            potion: { name: "Zioła", cost: 100, icon: "🌿", desc: "+50 HP" },
-            bomb:   { name: "Pułapka",  cost: 100, icon: "⚙️", desc: "Zabija potwora" },
-            shield: { name: "Barykada", cost: 100, icon: "🛡️", desc: "Blok (5s)" },
-            laser: { name: "Toporek", cost: 100, icon: "🪓", desc: "Atak specjalny" } 
+            potion: { name: "Zioła", cost: 100, icon: "🌿", desc: "+50 HP", buyable: true },
+            bomb:   { name: "Pułapka",  cost: 100, icon: "⚙️", desc: "Zabija potwora", buyable: true },
+            shield: { name: "Barykada", cost: 100, icon: "🛡️", desc: "Blok (5s)", buyable: true },
+            laser: { name: "Toporek", cost: 0, icon: "🪓", desc: "Rzadki przedmiot", buyable: false } 
         };
 
         const monsterTypes = ['m-slime', 'm-goblin', 'm-eye', 'm-golem', 'm-fire', 'm-skeleton', 'm-mushroom', 'm-spider', 'm-ghost', 'm-minotaur'];
-
-        const mathConfig = {
-            1: { max: 10, label: "ŁATWY" },
-            2: { max: 20, label: "ŚREDNI" },
-            3: { max: 50, label: "TRUDNY" },
-            4: { max: 100, label: "ULTRA" }
-        };
+        const mathConfig = { 1: { max: 10, label: "ŁATWY" }, 2: { max: 20, label: "ŚREDNI" }, 3: { max: 50, label: "TRUDNY" }, 4: { max: 100, label: "ULTRA" } };
 
         let state = {
             res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60,
@@ -411,610 +462,213 @@
             inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null,
             mathTier: 1, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
         };
-
         let math = { a:0, b:0, res:0, inp:"" };
         
         // --- SOUND SYSTEM ---
         const SoundSystem = {
-            ctx: null,
-            dayOsc: [],
-            nightOsc: [],
-            isMuted: false,
-
+            ctx: null, dayOsc: [], nightOsc: [], isMuted: false,
             init: function() {
                 if(this.ctx) return;
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AudioContext();
                 this.setupAmbience();
             },
-
-            resume: function() {
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            },
-
+            resume: function() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); },
             setupAmbience: function() {
-                this.dayGain = this.ctx.createGain();
-                this.dayGain.gain.value = 0;
-                this.dayGain.connect(this.ctx.destination);
-                
-                [110, 130.81].forEach(freq => { 
-                    let osc = this.ctx.createOscillator();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq;
-                    osc.connect(this.dayGain);
-                    osc.start();
-                    this.dayOsc.push(osc);
-                });
-
-                this.nightGain = this.ctx.createGain();
-                this.nightGain.gain.value = 0;
-                this.nightGain.connect(this.ctx.destination);
-
-                [55, 110, 112].forEach(freq => { 
-                    let osc = this.ctx.createOscillator();
-                    osc.type = 'sawtooth';
-                    osc.frequency.value = freq;
-                    let filter = this.ctx.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.value = 400;
-                    osc.connect(filter);
-                    filter.connect(this.nightGain);
-                    osc.start();
-                    this.nightOsc.push(osc);
-                });
+                this.dayGain = this.ctx.createGain(); this.dayGain.gain.value = 0; this.dayGain.connect(this.ctx.destination);
+                [110, 130.81].forEach(freq => { let osc = this.ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq; osc.connect(this.dayGain); osc.start(); this.dayOsc.push(osc); });
+                this.nightGain = this.ctx.createGain(); this.nightGain.gain.value = 0; this.nightGain.connect(this.ctx.destination);
+                [55, 110, 112].forEach(freq => { let osc = this.ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = freq; let filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400; osc.connect(filter); filter.connect(this.nightGain); osc.start(); this.nightOsc.push(osc); });
             },
-
             setAmbience: function(phase) {
-                if (!this.ctx) this.init();
-                this.resume();
-                const now = this.ctx.currentTime;
-                const time = 2; 
-
-                if (phase === 'day') {
-                    this.dayGain.gain.setTargetAtTime(0.02, now, time); 
-                    this.nightGain.gain.setTargetAtTime(0, now, time);
-                } else {
-                    this.dayGain.gain.setTargetAtTime(0, now, time);
-                    this.nightGain.gain.setTargetAtTime(0.15, now, time); 
-                }
+                if (!this.ctx) this.init(); this.resume(); const now = this.ctx.currentTime; const time = 2; 
+                if (phase === 'day') { this.dayGain.gain.setTargetAtTime(0.02, now, time); this.nightGain.gain.setTargetAtTime(0, now, time); } 
+                else { this.dayGain.gain.setTargetAtTime(0, now, time); this.nightGain.gain.setTargetAtTime(0.15, now, time); }
             },
-
             playSFX: function(type) {
-                if (!this.ctx) this.init();
-                this.resume();
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
+                if (!this.ctx) this.init(); this.resume(); const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.connect(gain); gain.connect(this.ctx.destination);
                 switch (type) {
-                    case 'hit': 
-                        osc.type = 'square';
-                        osc.frequency.setValueAtTime(150, t);
-                        osc.frequency.exponentialRampToValueAtTime(40, t + 0.2);
-                        gain.gain.setValueAtTime(0.3, t);
-                        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-                        osc.start(t); osc.stop(t + 0.2);
-                        break;
-
-                    case 'potion': 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(400, t);
-                        osc.frequency.linearRampToValueAtTime(1200, t + 0.3);
-                        gain.gain.setValueAtTime(0.2, t);
-                        gain.gain.linearRampToValueAtTime(0, t + 0.5);
-                        osc.start(t); osc.stop(t + 0.5);
-                        break;
-
-                    case 'bomb': 
-                    case 'laser':
-                        const bufSize = this.ctx.sampleRate * 0.5;
-                        const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-                        const data = buffer.getChannelData(0);
-                        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-                        const noise = this.ctx.createBufferSource();
-                        noise.buffer = buffer;
-                        const bombFilter = this.ctx.createBiquadFilter();
-                        bombFilter.type = 'lowpass';
-                        bombFilter.frequency.value = 800;
-                        noise.connect(bombFilter);
-                        bombFilter.connect(gain);
-                        gain.gain.setValueAtTime(0.5, t);
-                        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-                        noise.start(t);
-                        break;
-
-                    case 'shield': 
-                        osc.type = 'sawtooth';
-                        osc.frequency.setValueAtTime(200, t);
-                        osc.frequency.linearRampToValueAtTime(600, t + 0.3);
-                        gain.gain.setValueAtTime(0.2, t);
-                        gain.gain.setValueAtTime(0.05, t + 0.1); 
-                        gain.gain.setValueAtTime(0.2, t + 0.2);
-                        gain.gain.linearRampToValueAtTime(0, t + 0.5);
-                        osc.start(t); osc.stop(t + 0.5);
-                        break;
-
-                    case 'ui': 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(800, t);
-                        gain.gain.setValueAtTime(0.05, t);
-                        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-                        osc.start(t); osc.stop(t + 0.05);
-                        break;
-                        
-                    case 'win': 
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(440, t);
-                        osc.frequency.setValueAtTime(554, t + 0.1); 
-                        gain.gain.setValueAtTime(0.1, t);
-                        gain.gain.linearRampToValueAtTime(0, t + 0.3);
-                        osc.start(t); osc.stop(t + 0.3);
-                        break;
+                    case 'hit': osc.type='square'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(40, t+0.2); gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.2); osc.start(t); osc.stop(t+0.2); break;
+                    case 'potion': osc.type='sine'; osc.frequency.setValueAtTime(400, t); osc.frequency.linearRampToValueAtTime(1200, t+0.3); gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0, t+0.5); osc.start(t); osc.stop(t+0.5); break;
+                    case 'bomb': case 'laser': { const bS=this.ctx.sampleRate*0.5; const buf=this.ctx.createBuffer(1,bS,this.ctx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<bS;i++) d[i]=Math.random()*2-1; const n=this.ctx.createBufferSource(); n.buffer=buf; const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; n.connect(f); f.connect(gain); gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.5); n.start(t); break; }
+                    case 'shield': osc.type='sawtooth'; osc.frequency.setValueAtTime(200, t); osc.frequency.linearRampToValueAtTime(600, t+0.3); gain.gain.setValueAtTime(0.2, t); gain.gain.setValueAtTime(0.05, t+0.1); gain.gain.setValueAtTime(0.2, t+0.2); gain.gain.linearRampToValueAtTime(0, t+0.5); osc.start(t); osc.stop(t+0.5); break;
+                    case 'ui': osc.type='sine'; osc.frequency.setValueAtTime(800, t); gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t+0.05); osc.start(t); osc.stop(t+0.05); break;
+                    case 'win': osc.type='triangle'; osc.frequency.setValueAtTime(440, t); osc.frequency.setValueAtTime(554, t+0.1); gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0, t+0.3); osc.start(t); osc.stop(t+0.3); break;
                 }
             }
         };
 
         function playTransition(color) {
-            const t = document.getElementById('transition-layer');
-            t.style.backgroundColor = color;
-            t.style.opacity = 1;
-            setTimeout(() => {
-                t.style.opacity = 0;
-            }, 1000); 
+            const t = document.getElementById('transition-layer'); t.style.backgroundColor = color; t.style.opacity = 1;
+            setTimeout(() => { t.style.opacity = 0; }, 1000); 
         }
 
-        function showMainMenu() {
-            document.getElementById('main-menu-screen').style.display = 'flex';
-            document.getElementById('difficulty-screen').style.display = 'none';
-            // Usunięto: updateDiffLabel();
-        }
-
-        function showDifficultySelect() {
-            document.getElementById('main-menu-screen').style.display = 'none';
-            document.getElementById('difficulty-screen').style.display = 'flex';
-        }
-
-        function selectTier(tier) {
-            SoundSystem.init(); 
-            startGame(tier); // Zmiana: Od razu startuje grę
-        }
-
-        // Usunięto funkcję updateDiffLabel()
-        // Usunięto funkcję mainMenuStartGame()
+        function showMainMenu() { document.getElementById('main-menu-screen').style.display = 'flex'; document.getElementById('difficulty-screen').style.display = 'none'; }
+        function showDifficultySelect() { document.getElementById('main-menu-screen').style.display = 'none'; document.getElementById('difficulty-screen').style.display = 'flex'; }
+        function selectTier(tier) { SoundSystem.init(); startGame(tier); }
 
         function startGame(tier) {
-            state.mathTier = tier;
-            document.getElementById('difficulty-screen').style.display = 'none'; // Zmiana: ukrywa ekran trudności
-            document.body.classList.remove('night'); 
-            document.getElementById('hud').style.display = 'flex';
-            document.getElementById('game-area').style.display = 'flex';
-            document.getElementById('controls').style.display = 'flex';
-            SoundSystem.setAmbience('day'); 
-            init();
+            state.mathTier = tier; document.getElementById('difficulty-screen').style.display = 'none'; document.body.classList.remove('night'); 
+            document.getElementById('hud').style.display = 'flex'; document.getElementById('game-area').style.display = 'flex'; document.getElementById('controls').style.display = 'flex';
+            SoundSystem.setAmbience('day'); init();
         }
 
         function init() {
-            updateUI();
-            startDay();
-            state.intervalId = setInterval(() => {
-                if (state.timeLeft > 0) {
-                    state.timeLeft--;
-                    updateTimerDisplay();
-                } else {
-                    switchPhase();
-                }
-            }, 1000);
+            updateUI(); startDay();
+            state.intervalId = setInterval(() => { if (state.timeLeft > 0) { state.timeLeft--; updateTimerDisplay(); } else { switchPhase(); } }, 1000);
         }
 
         function updateTimerDisplay() {
-            const tBox = document.getElementById('timer-box');
-            tBox.innerText = (state.phase==='day' ? '☀️' : '🌙') + ' ' + state.timeLeft + 's';
-            tBox.style.color = state.timeLeft <= 10 ? 'red' : '#fff';
+            const tBox = document.getElementById('timer-box'); tBox.innerText = (state.phase==='day' ? '☀️' : '🌙') + ' ' + state.timeLeft + 's'; tBox.style.color = state.timeLeft <= 10 ? 'red' : '#fff';
         }
 
-        function switchPhase() {
-            if(state.phase === 'day') startNight();
-            else showNightScreen();
-        }
+        function switchPhase() { if(state.phase === 'day') startNight(); else showNightScreen(); }
 
-        function getWordForm(n, forms) {
-            if (n === 1) return forms[0];
-            if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return forms[1];
-            return forms[2];
-        }
+        function getWordForm(n, forms) { if (n === 1) return forms[0]; if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return forms[1]; return forms[2]; }
 
         function showNightScreen() {
-            stopDamage();
-            const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']);
-            document.getElementById('night-summary-val').innerText = `${state.night} ${nightWord}`;
-            
-            const streakSummary = document.getElementById('streak-summary');
-            if(state.completedStreaks > 0) {
-                streakSummary.innerText = `Ilość bezbłędnych serii: ${state.completedStreaks}`;
-            } else {
-                streakSummary.innerText = "";
-            }
-
-            document.getElementById('night-screen').style.display = 'flex';
-            SoundSystem.playSFX('win'); 
+            stopDamage(); const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']); document.getElementById('night-summary-val').innerText = `${state.night} ${nightWord}`;
+            const sSum = document.getElementById('streak-summary'); sSum.innerText = state.completedStreaks > 0 ? `Ilość bezbłędnych serii: ${state.completedStreaks}` : "";
+            document.getElementById('night-screen').style.display = 'flex'; SoundSystem.playSFX('win'); 
         }
 
         function showNotification(text, isGold = false) {
-            const float = document.createElement('div');
-            float.className = isGold ? 'floating-msg msg-gold' : 'floating-msg';
-            float.innerText = text;
-            document.body.appendChild(float);
-            setTimeout(()=>float.remove(), 2000);
+            const float = document.createElement('div'); float.className = isGold ? 'floating-msg msg-gold' : 'floating-msg'; float.innerText = text;
+            document.body.appendChild(float); setTimeout(()=>float.remove(), 2000);
+        }
+        
+        // --- NOWA FUNKCJA ANIMACJI UI ---
+        function showUIFeedback(element, text, color='#0f0') {
+            const rect = element.getBoundingClientRect();
+            const el = document.createElement('div');
+            el.className = 'ui-feedback';
+            el.innerText = text;
+            el.style.color = color;
+            el.style.left = (rect.left + rect.width/2) + 'px';
+            el.style.top = (rect.top) + 'px';
+            // Wycentrowanie
+            el.style.transform = "translate(-50%, 0)";
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
         }
 
         function startDay() {
-            playTransition('white');
-            SoundSystem.setAmbience('day'); 
-            document.getElementById('night-screen').style.display = 'none'; 
-            state.phase = 'day';
-            state.timeLeft = 60;
-            document.body.classList.remove('night');
-            document.getElementById('inventory-bar').classList.add('day-locked');
-            document.getElementById('monster-power').style.opacity = 0;
-            stopDamage();
-
-            if(state.activeMath) {
-                closeMath(); 
-            }
-
-            document.getElementById('action-buttons').style.display = 'flex';
-            document.getElementById('keypad').style.display = 'none'; 
-            document.getElementById('math-panel').innerText = "ZBIERAJ SUROWCE!";
-            document.getElementById('math-panel').style.borderColor = "var(--c-hp)";
-            state.hp = Math.min(state.hp + 30, state.maxHp); 
-            updateUI();
+            playTransition('white'); SoundSystem.setAmbience('day'); document.getElementById('night-screen').style.display = 'none'; 
+            state.phase = 'day'; state.timeLeft = 60; document.body.classList.remove('night');
+            document.getElementById('inventory-bar').classList.add('day-locked'); document.getElementById('monster-power').style.opacity = 0; stopDamage();
+            if(state.activeMath) closeMath(); 
+            document.getElementById('action-buttons').style.display = 'flex'; document.getElementById('keypad').style.display = 'none'; 
+            document.getElementById('math-panel').innerText = "ZBIERAJ SUROWCE!"; document.getElementById('math-panel').style.borderColor = "var(--c-hp)";
+            state.hp = Math.min(state.hp + 30, state.maxHp); updateUI();
         }
 
         function startNight() {
-            playTransition('black');
-            SoundSystem.setAmbience('night'); 
-            SoundSystem.playSFX('ui'); 
-            closeModals();
-            state.phase = 'night';
-            state.timeLeft = 60;
-            state.night++;
-            document.body.classList.add('night');
-            document.getElementById('inventory-bar').classList.remove('day-locked');
-            document.getElementById('action-buttons').style.display = 'none';
-            document.getElementById('keypad').style.display = 'grid';
-            document.getElementById('keypad').classList.add('inactive');
-            document.getElementById('math-panel').innerText = "NOC NADCHODZI...";
-            updateUI();
-            spawnMonsterLoop();
+            playTransition('black'); SoundSystem.setAmbience('night'); SoundSystem.playSFX('ui'); closeModals();
+            state.phase = 'night'; state.timeLeft = 60; state.night++; document.body.classList.add('night');
+            document.getElementById('inventory-bar').classList.remove('day-locked'); document.getElementById('action-buttons').style.display = 'none';
+            document.getElementById('keypad').style.display = 'grid'; document.getElementById('keypad').classList.add('inactive');
+            document.getElementById('math-panel').innerText = "NOC NADCHODZI..."; updateUI(); spawnMonsterLoop();
         }
 
-        function startGatherTask() {
-            state.activeMath = true;
-            state.mathMode = 'gather';
-            document.getElementById('action-buttons').style.display = 'none';
-            document.getElementById('keypad').style.display = 'grid';
-            unlockInput();
-            generateMath();
-        }
+        function startGatherTask() { state.activeMath = true; state.mathMode = 'gather'; document.getElementById('action-buttons').style.display = 'none'; document.getElementById('keypad').style.display = 'grid'; unlockInput(); generateMath(); }
 
-        function spawnMonsterLoop() {
-            if(state.phase !== 'night') return;
-            lockInput("Czekaj...");
-            setTimeout(() => {
-                if(state.phase === 'night') monsterAttack();
-            }, Math.random() * 1500 + 1000);
-        }
+        function spawnMonsterLoop() { if(state.phase !== 'night') return; lockInput("Czekaj..."); setTimeout(() => { if(state.phase === 'night') monsterAttack(); }, Math.random() * 1500 + 1000); }
 
         function monsterAttack() {
-            state.activeMath = true;
-            state.mathMode = 'defend';
-            unlockInput();
-
-            const m = document.getElementById('monster');
-            m.className = ''; 
-            const randomMonster = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
-            m.classList.add(randomMonster);
-            m.style.opacity = 1;
-            m.style.transition = "none";
-            m.style.transform = "scale(1)";
-            setTimeout(() => {
-                m.style.transition = "transform 8s linear";
-                m.style.transform = "scale(3)";
-            }, 50);
-
-            generateMath();
-            document.getElementById('math-panel').style.borderColor = "red";
-
-            let power = 5 + (state.night * 6); 
-            let def = levels[state.lvl].def;
-            let dmg = Math.max(Math.ceil(power * 0.1), power - def);
-
-            const pwrDiv = document.getElementById('monster-power');
-            pwrDiv.innerHTML = `⚔️ ATAK: ${dmg}`;
-            pwrDiv.style.opacity = 1;
-
-            clearInterval(state.dmgInterval);
-            state.dmgInterval = setInterval(() => {
-                if(!state.isShielded) takeDamage(dmg);
-            }, 1200);
+            state.activeMath = true; state.mathMode = 'defend'; unlockInput();
+            const m = document.getElementById('monster'); m.className = ''; const rM = monsterTypes[Math.floor(Math.random() * monsterTypes.length)]; m.classList.add(rM);
+            m.style.opacity = 1; m.style.transition = "none"; m.style.transform = "scale(1)";
+            setTimeout(() => { m.style.transition = "transform 8s linear"; m.style.transform = "scale(3)"; }, 50);
+            generateMath(); document.getElementById('math-panel').style.borderColor = "red";
+            let power = 5 + (state.night * 6); let def = levels[state.lvl].def; let dmg = Math.max(Math.ceil(power * 0.1), power - def);
+            const pwrDiv = document.getElementById('monster-power'); pwrDiv.innerHTML = `⚔️ ATAK: ${dmg}`; pwrDiv.style.opacity = 1;
+            clearInterval(state.dmgInterval); state.dmgInterval = setInterval(() => { if(!state.isShielded) takeDamage(dmg); }, 1200);
         }
 
         function takeDamage(amt) {
-            SoundSystem.playSFX('hit'); 
-            state.hp -= amt;
-            updateUI();
-            document.getElementById('game-area').classList.add('shake-screen');
-            document.getElementById('flash-overlay').style.opacity = 0.3;
-            setTimeout(() => {
-                document.getElementById('game-area').classList.remove('shake-screen');
-                document.getElementById('flash-overlay').style.opacity = 0;
-            }, 100);
+            SoundSystem.playSFX('hit'); state.hp -= amt; updateUI();
+            document.getElementById('game-area').classList.add('shake-screen'); document.getElementById('flash-overlay').style.opacity = 0.3;
+            setTimeout(() => { document.getElementById('game-area').classList.remove('shake-screen'); document.getElementById('flash-overlay').style.opacity = 0; }, 100);
             if(state.hp <= 0) gameOver();
         }
 
         function gameOver() {
-            clearInterval(state.dmgInterval);
-            clearInterval(state.intervalId);
-            
-            const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']);
-            document.getElementById('final-night').innerText = `${state.night} ${nightWord}`;
-            
+            clearInterval(state.dmgInterval); clearInterval(state.intervalId);
+            const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']); document.getElementById('final-night').innerText = `${state.night} ${nightWord}`;
             const rec = document.getElementById('recommendation');
-            if (state.completedStreaks > 0 && state.mathTier < 4) {
-                let nextLabel = mathConfig[state.mathTier + 1].label;
-                rec.innerText = `Świetnie ci idzie! Ilość bezbłędnych serii: ${state.completedStreaks}. Spróbuj poziomu: ${nextLabel}!`;
-            } else {
-                rec.innerText = "";
-            }
-
-            const list = document.getElementById('mistakes-list');
-            list.innerHTML = "";
+            if (state.completedStreaks > 0 && state.mathTier < 4) { let nextLabel = mathConfig[state.mathTier + 1].label; rec.innerText = `Świetnie ci idzie! Ilość bezbłędnych serii: ${state.completedStreaks}. Spróbuj poziomu: ${nextLabel}!`; } else { rec.innerText = ""; }
+            const list = document.getElementById('mistakes-list'); list.innerHTML = "";
             if(state.mistakes.length === 0) list.innerHTML = "<li>Brak błędów! Brawo!</li>";
-            else {
-                const uniqueMistakes = [...new Set(state.mistakes)];
-                uniqueMistakes.forEach(m => {
-                    const li = document.createElement('li');
-                    li.innerText = m;
-                    list.appendChild(li);
-                });
-            }
+            else { [...new Set(state.mistakes)].forEach(m => { const li = document.createElement('li'); li.innerText = m; list.appendChild(li); }); }
             document.getElementById('game-over-screen').style.display = 'flex';
         }
 
+        function showConfirmModal() { document.getElementById('confirm-modal').style.display = 'flex'; SoundSystem.playSFX('ui'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').style.display = 'none'; SoundSystem.playSFX('ui'); }
+
         function hardReset() {
-            state = {
-                res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60,
-                isShielded: false, inv: { potion: 1, bomb: 0, shield: 0, laser: 0 }, 
-                inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null,
-                mathTier: 1, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
-            };
-            
-            document.getElementById('game-over-screen').style.display = 'none';
-            document.getElementById('night-screen').style.display = 'none';
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('game-area').style.display = 'none';
-            document.getElementById('controls').style.display = 'none';
-            document.body.classList.remove('night');
-            
-            showMainMenu();
-            
-            document.getElementById('monster').style.opacity = 0;
-            document.getElementById('monster-power').style.opacity = 0;
-            document.querySelectorAll('.dropped-item').forEach(e => e.remove());
-            updateUI();
+            closeConfirmModal(); clearInterval(state.dmgInterval); clearInterval(state.intervalId);
+            state = { res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60, isShielded: false, inv: { potion: 1, bomb: 0, shield: 0, laser: 0 }, inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null, mathTier: 1, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0 };
+            document.getElementById('game-over-screen').style.display = 'none'; document.getElementById('night-screen').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('game-area').style.display = 'none'; document.getElementById('controls').style.display = 'none'; document.body.classList.remove('night');
+            showMainMenu(); document.getElementById('monster').style.opacity = 0; document.getElementById('monster-power').style.opacity = 0; document.querySelectorAll('.dropped-item').forEach(e => e.remove()); updateUI(); SoundSystem.playSFX('ui');
         }
 
         function generateMath() {
-            const maxProd = mathConfig[state.mathTier].max;
-            let limitA = Math.floor(maxProd / 2);
-            if (limitA > 10) limitA = 10; 
-            if (limitA < 2) limitA = 2;
-
-            let a, b;
-            let attempts = 0;
-            do {
-                attempts++;
-                a = Math.floor(Math.random() * (limitA - 1)) + 2;
-                let limitB = Math.floor(maxProd / a);
-                if (limitB > 10) limitB = 10;
-                if (limitB < 2) { a = 2; limitB = Math.floor(maxProd / 2); }
-                b = Math.floor(Math.random() * (limitB - 1)) + 2;
-            } while (a === state.lastA && b === state.lastB && attempts < 20);
-
-            state.lastA = a; state.lastB = b;
-            math.a = a; math.b = b; math.res = a * b;
-            math.inp = "";
-            updateMathDisplay();
+            const tierProblems = MATH_DATA[state.mathTier]; let problem; let attempts = 0;
+            do { attempts++; const randomIndex = Math.floor(Math.random() * tierProblems.length); problem = tierProblems[randomIndex]; } while ((problem.a === state.lastA && problem.b === state.lastB) && attempts < 5 && tierProblems.length > 1);
+            state.lastA = problem.a; state.lastB = problem.b; math.a = problem.a; math.b = problem.b; math.res = problem.a * problem.b; math.inp = ""; updateMathDisplay();
         }
 
-        function updateMathDisplay() {
-            if(state.inputLocked) return;
-            document.getElementById('math-panel').innerText = `${math.a} × ${math.b} = ${math.inp}`;
-        }
-
-        function input(n) { 
-            if(state.inputLocked) return;
-            math.inp += n; 
-            updateMathDisplay(); 
-            SoundSystem.playSFX('ui'); 
-        }
-        function clearInput() { 
-            if(state.inputLocked) return;
-            math.inp = ""; 
-            updateMathDisplay(); 
-        }
+        function updateMathDisplay() { if(state.inputLocked) return; document.getElementById('math-panel').innerText = `${math.a} × ${math.b} = ${math.inp}`; }
+        function input(n) { if(state.inputLocked) return; math.inp += n; updateMathDisplay(); SoundSystem.playSFX('ui'); }
+        function clearInput() { if(state.inputLocked) return; math.inp = ""; updateMathDisplay(); }
 
         function checkAnswer() {
             if(state.inputLocked) return;
-            if(parseInt(math.inp) === math.res) {
-                state.streak++;
-                updateProgression();
-                success();
-            } else {
-                SoundSystem.playSFX('hit'); 
-                document.getElementById('math-panel').style.borderColor = "red";
-                state.mistakes.push(`${math.a} × ${math.b} = ${math.res}`);
-                state.streak = 0;
-                updateProgression();
-                math.inp = "";
-                updateMathDisplay();
-                setTimeout(()=>document.getElementById('math-panel').style.borderColor="var(--c-hp)", 200);
-            }
+            if(parseInt(math.inp) === math.res) { state.streak++; updateProgression(); success(); } 
+            else { SoundSystem.playSFX('hit'); document.getElementById('math-panel').style.borderColor = "red"; state.mistakes.push(`${math.a} × ${math.b} = ${math.res}`); state.streak = 0; updateProgression(); math.inp = ""; updateMathDisplay(); setTimeout(()=>document.getElementById('math-panel').style.borderColor="var(--c-hp)", 200); }
         }
 
         function updateProgression() {
-            let pct = (state.streak / 5) * 100;
-            if(pct > 100) pct = 100;
-            const bar = document.getElementById('prog-fill');
-            bar.style.width = pct + "%";
-            
-            if(state.streak >= 5) {
-                state.streak = 0;
-                state.completedStreaks++;
-                bar.style.width = "0%";
-                showNotification("+1 SERIA BEZBŁĘDNA!", true);
-                spawnLoot('laser', 1);
-                SoundSystem.playSFX('win'); 
-            }
+            let pct = (state.streak / 5) * 100; if(pct > 100) pct = 100;
+            const bar = document.getElementById('prog-fill'); bar.style.width = pct + "%";
+            if(state.streak >= 5) { state.streak = 0; state.completedStreaks++; bar.style.width = "0%"; showNotification("+1 SERIA BEZBŁĘDNA!", true); spawnLoot('laser', 1); SoundSystem.playSFX('win'); }
         }
 
         function success() {
             SoundSystem.playSFX('win'); 
-            if(state.phase === 'day') {
-                spawnLoot('resource', 5 + state.night); 
-                if(Math.random() < 0.5) spawnLoot('gold', Math.floor(Math.random()*10) + 15);
-                closeMath();
-                document.getElementById('math-panel').innerText = "DOBRA ROBOTA!";
-            } else {
-                stopDamage();
-                spawnLoot('gold', 40 + (state.night * 5));
-                if(Math.random() < 0.3) {
-                    const items = ['potion', 'bomb', 'shield'];
-                    spawnLoot(items[Math.floor(Math.random()*3)], 1);
-                }
-                lockInput("POKONANY!");
-                document.getElementById('monster-power').style.opacity = 0;
-                setTimeout(() => { spawnMonsterLoop(); }, 1200);
-            }
+            if(state.phase === 'day') { spawnLoot('resource', 5 + state.night); if(Math.random() < 0.5) spawnLoot('gold', Math.floor(Math.random()*10) + 15); closeMath(); document.getElementById('math-panel').innerText = "DOBRA ROBOTA!"; } 
+            else { stopDamage(); spawnLoot('gold', 40 + (state.night * 5)); if(Math.random() < 0.3) { const lI = ['potion', 'bomb', 'shield']; spawnLoot(lI[Math.floor(Math.random()*3)], 1); } lockInput("POKONANY!"); document.getElementById('monster-power').style.opacity = 0; setTimeout(() => { spawnMonsterLoop(); }, 1200); }
         }
 
-        function lockInput(msg) {
-            state.inputLocked = true;
-            document.getElementById('math-panel').innerText = msg;
-            document.getElementById('math-panel').classList.add('locked');
-            document.getElementById('keypad').classList.add('inactive');
-        }
-
-        function unlockInput() {
-            state.inputLocked = false;
-            document.getElementById('math-panel').classList.remove('locked');
-            document.getElementById('keypad').classList.remove('inactive');
-            document.getElementById('math-panel').style.borderColor = "var(--c-hp)";
-        }
-
-        function closeMath() {
-            state.activeMath = false;
-            state.mathMode = 'none';
-            state.inputLocked = false;
-            document.getElementById('action-buttons').style.display = 'flex';
-            document.getElementById('keypad').style.display = 'none'; 
-        }
+        function lockInput(msg) { state.inputLocked = true; document.getElementById('math-panel').innerText = msg; document.getElementById('math-panel').classList.add('locked'); document.getElementById('keypad').classList.add('inactive'); }
+        function unlockInput() { state.inputLocked = false; document.getElementById('math-panel').classList.remove('locked'); document.getElementById('keypad').classList.remove('inactive'); document.getElementById('math-panel').style.borderColor = "var(--c-hp)"; }
+        function closeMath() { state.activeMath = false; state.mathMode = 'none'; state.inputLocked = false; document.getElementById('action-buttons').style.display = 'flex'; document.getElementById('keypad').style.display = 'none'; }
 
         function spawnLoot(type, amount) {
-            const el = document.createElement('div');
-            el.className = 'dropped-item';
-            let icon = "❓"; let color = "#fff";
-            // ZMIANA: Surowiec drewno to teraz KŁODA
-            if(type === 'gold') { icon = "💰"; color="gold"; }
-            else if(type === 'resource') { icon = levels[state.lvl].res === 'wood' ? '🪵' : (levels[state.lvl].res === 'stone' ? '🪨' : '🔩'); color="orange"; }
-            else if(type === 'potion') icon = "🌿";
-            else if(type === 'bomb') icon = "⚙️";
-            else if(type === 'shield') icon = "🛡️";
-            else if(type === 'laser') { icon = "🪓"; color = "#2196F3"; }
-
-            el.innerText = icon;
-            
-            el.style.left = (20 + Math.random() * 60) + '%';
-            el.style.top = (20 + Math.random() * 40) + '%';
-            
+            const el = document.createElement('div'); el.className = 'dropped-item'; let icon = "❓"; let color = "#fff";
+            if(type === 'gold') { icon = "💰"; color="gold"; } else if(type === 'resource') { icon = levels[state.lvl].res === 'wood' ? '🪵' : (levels[state.lvl].res === 'stone' ? '🪨' : '🔩'); color="orange"; } else { if(items[type]) { icon = items[type].icon; if(type==='laser') color="#2196F3"; } else { return; } }
+            el.innerText = icon; el.style.left = (20 + Math.random() * 60) + '%'; el.style.top = (20 + Math.random() * 40) + '%';
             el.onclick = function(e) {
-                collectLoot(type, amount);
-                const float = document.createElement('div');
-                float.className = 'floating-msg';
-
-                let msgContent = "";
-                if(type === 'gold') {
-                    msgContent = `+${amount} 💰`;
-                } else if(type === 'resource') {
-                    // ZMIANA: Ikona surowca w powiadomieniu
-                    let rIcon = levels[state.lvl].res === 'wood' ? '🪵' : '🪨';
-                    msgContent = `+${amount} ${rIcon}`;
-                } else {
-                    msgContent = `${items[type].icon} ${items[type].name.toUpperCase()}`;
-                }
-
-                float.innerText = msgContent;
-                float.style.color = color;
-                
-                document.getElementById('game-area').appendChild(float);
-                
-                setTimeout(()=>float.remove(), 1500);
-                el.remove();
-                SoundSystem.playSFX('win'); 
+                collectLoot(type, amount); const float = document.createElement('div'); float.className = 'floating-msg';
+                let msgC = ""; if(type === 'gold') msgC = `+${amount} 💰`; else if(type === 'resource') { let rI = levels[state.lvl].res === 'wood' ? '🪵' : '🪨'; msgC = `+${amount} ${rI}`; } else { msgC = `${items[type].icon} ${items[type].name.toUpperCase()}`; }
+                float.innerText = msgC; float.style.color = color; document.getElementById('game-area').appendChild(float); setTimeout(()=>float.remove(), 1500); el.remove(); SoundSystem.playSFX('win'); 
             };
-
-            document.getElementById('game-area').appendChild(el);
-            setTimeout(() => { if(el.parentNode) el.remove(); }, 8000);
+            document.getElementById('game-area').appendChild(el); setTimeout(() => { if(el.parentNode) el.remove(); }, 8000);
         }
 
-        function collectLoot(type, amount) {
-            if(type === 'resource') state.res += amount;
-            else if(type === 'gold') state.gold += amount;
-            else state.inv[type]++;
-            updateUI();
-        }
-
-        function stopDamage() {
-            clearInterval(state.dmgInterval);
-            document.getElementById('monster').style.opacity = 0;
-        }
+        function collectLoot(type, amount) { if(type === 'resource') state.res += amount; else if(type === 'gold') state.gold += amount; else state.inv[type]++; updateUI(); }
+        function stopDamage() { clearInterval(state.dmgInterval); document.getElementById('monster').style.opacity = 0; }
 
         function useItem(type) {
-            if(state.phase === 'day') {
-                showNotification("Teraz zdobywaj i kupuj - wykorzystasz je w nocy!");
-                return;
-            }
+            if(state.phase === 'day') { showNotification("Teraz zdobywaj i kupuj - wykorzystasz je w nocy!"); return; }
             if(state.inv[type] > 0) {
                 state.inv[type]--;
-                if(type === 'potion') { 
-                    state.hp = Math.min(state.hp + 50, state.maxHp);
-                    SoundSystem.playSFX('potion'); 
-                }
-                else if(type === 'bomb') { 
-                    if(state.mathMode==='defend') {
-                        SoundSystem.playSFX('bomb'); 
-                        success(); 
-                    }
-                }
-                else if(type === 'laser') { 
-                    if(state.mathMode==='defend') {
-                        SoundSystem.playSFX('laser'); 
-                        success(); 
-                    }
-                }
-                else if(type === 'shield') {
-                    SoundSystem.playSFX('shield'); 
-                    state.isShielded = true;
-                    document.getElementById('game-area').style.border = "5px solid #00e5ff";
-                    setTimeout(()=>{ 
-                        state.isShielded = false; 
-                        document.getElementById('game-area').style.border="none"; 
-                    }, 5000);
-                }
+                if(type === 'potion') { state.hp = Math.min(state.hp + 50, state.maxHp); SoundSystem.playSFX('potion'); }
+                else if(type === 'bomb') { if(state.mathMode==='defend') { SoundSystem.playSFX('bomb'); success(); } }
+                else if(type === 'laser') { if(state.mathMode==='defend') { SoundSystem.playSFX('laser'); success(); } }
+                else if(type === 'shield') { SoundSystem.playSFX('shield'); state.isShielded = true; document.getElementById('game-area').style.border = "5px solid #00e5ff"; setTimeout(()=>{ state.isShielded = false; document.getElementById('game-area').style.border="none"; }, 5000); }
                 updateUI();
             }
         }
@@ -1023,127 +677,67 @@
         function openBuild() { renderList('build-list', levels, false); document.getElementById('build-menu').style.display = 'flex'; }
         
         function renderList(id, data, isShop) {
-            const list = document.getElementById(id);
-            list.innerHTML = "";
-            const entries = isShop ? Object.keys(data) : data;
-
+            const list = document.getElementById(id); list.innerHTML = ""; const entries = isShop ? Object.keys(data) : data;
             entries.forEach((key, i) => {
                 let item, canBuy, isOwned = false, costIcon = "💰";
-                if(isShop) {
-                    item = data[key]; 
-                    canBuy = state.gold >= item.cost;
-                } else {
-                    item = key;
-                    if(i > state.lvl + 1) return;
-                    isOwned = i <= state.lvl;
-                    canBuy = (i === state.lvl + 1) && state.res >= item.cost;
-                    // ZMIANA: Ikona kosztu budowy to teraz KŁODA
-                    costIcon = item.res === 'wood' ? '🪵' : (item.res === 'stone' ? '🪨' : '🔩');
-                }
-
-                // ZMIANA: Użycie zmiennej base-size do obliczeń w JS
-                const baseSize = 220;
-                const cols = 4;
-                const colIdx = i % cols;
-                const rowIdx = Math.floor(i / cols);
+                if(isShop) { item = data[key]; if(item.buyable === false) return; canBuy = state.gold >= item.cost; } 
+                else { item = key; if(i > state.lvl + 1) return; isOwned = i <= state.lvl; canBuy = (i === state.lvl + 1) && state.res >= item.cost; costIcon = item.res === 'wood' ? '🪵' : (item.res === 'stone' ? '🪨' : '🔩'); }
                 
-                const xPos = -(colIdx * baseSize);
-                const yPos = -(rowIdx * baseSize);
+                // NAPRAWIONO IKONY W MENU (użycie 60px zamiast 220px)
+                const menuSize = 60; 
+                const cols = 4; const colIdx = i % cols; const rowIdx = Math.floor(i / cols);
+                const xPos = -(colIdx * menuSize); const yPos = -(rowIdx * menuSize);
+                let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}px ${yPos}px;"></div>`;
 
-                let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}px ${yPos}px; background-size: ${baseSize*4}px ${baseSize*2}px"></div>`;
-
-                const div = document.createElement('div');
-                div.className = `card ${canBuy ? 'affordable' : ''}`;
-                div.style.opacity = isOwned ? 0.5 : 1;
+                const div = document.createElement('div'); div.className = `card ${canBuy ? 'affordable' : ''}`; div.style.opacity = isOwned ? 0.5 : 1;
+                // DODANO 'this' DO ONCLICK ABY ZŁAPAĆ PRZYCISK DLA ANIMACJI
                 div.innerHTML = `
                     ${iconHtml}
-                    <div style="flex:1">
-                        <div style="font-weight:bold">${item.name}</div>
-                        <div style="font-size:0.8rem">${isShop ? item.desc : 'Def: ' + item.def}</div>
-                    </div>
+                    <div style="flex:1"> <div style="font-weight:bold">${item.name}</div> <div style="font-size:0.8rem">${isShop ? item.desc : 'Def: ' + item.def}</div> </div>
                     <div>${isOwned ? '✅' : item.cost + costIcon}</div>
-                    ${canBuy ? `<button class="btn-buy" onclick="${isShop ? `buyShop('${key}')` : `upgradeBase(${i})`}">KUP</button>` : ''}
+                    ${canBuy ? `<button class="btn-buy" onclick="${isShop ? `buyShop('${key}', this)` : `upgradeBase(${i}, this)`}">KUP</button>` : ''}
                 `;
                 list.appendChild(div);
             });
         }
 
-        function buyShop(key) {
+        function buyShop(key, btn) {
             const item = items[key];
             if(state.gold >= item.cost) {
-                state.gold -= item.cost;
-                state.inv[key]++;
-                updateUI();
-                openShop(); 
-                SoundSystem.playSFX('ui'); 
+                state.gold -= item.cost; state.inv[key]++; updateUI(); 
+                showUIFeedback(btn, "+1"); // Animacja
+                openShop(); SoundSystem.playSFX('ui'); 
             }
         }
 
-        function upgradeBase(i) {
+        function upgradeBase(i, btn) {
             const next = levels[i];
             if(state.res >= next.cost) {
-                state.res -= next.cost;
-                state.lvl = i;
-                state.maxHp = next.hp;
-                state.hp = state.maxHp;
-                if(i > 0 && levels[i].res !== levels[i-1].res) {
-                    state.res = 0; 
-                    showEraScreen(levels[i].res);
-                }
-                updateUI();
-                closeModals();
-                SoundSystem.playSFX('win'); 
+                state.res -= next.cost; state.lvl = i; state.maxHp = next.hp; state.hp = state.maxHp;
+                updateUI(); 
+                showUIFeedback(btn, "ULEPSZONO!", "#fff"); // Animacja
+                closeModals(); SoundSystem.playSFX('win'); 
             }
         }
 
-        function showEraScreen(resName) {
-            let namePL = resName === 'stone' ? "KAMIEŃ" : "METAL";
-            let icon = resName === 'stone' ? "🪨" : "🔩";
-            document.getElementById('era-name').innerText = namePL;
-            document.getElementById('era-icon').innerText = icon;
-            document.getElementById('era-screen').style.display = 'flex';
-        }
-
-        function closeEraScreen() { document.getElementById('era-screen').style.display = 'none'; }
         function closeModals() { document.getElementById('shop-menu').style.display = 'none'; document.getElementById('build-menu').style.display = 'none'; }
 
         function updateUI() {
-            const lvl = levels[state.lvl];
-            // ZMIANA: Ikona surowca w HUD to teraz KŁODA
-            let rIcon = lvl.res === 'wood' ? '🪵' : (lvl.res === 'stone' ? '🪨' : '🔩');
-            document.getElementById('night-val').innerText = state.night;
-            document.getElementById('res-icon').innerText = rIcon;
-            document.getElementById('res-count').innerText = state.res;
-            document.getElementById('gold-count').innerText = state.gold;
+            const lvl = levels[state.lvl]; let rIcon = lvl.res === 'wood' ? '🪵' : (lvl.res === 'stone' ? '🪨' : '🔩');
+            document.getElementById('night-val').innerText = state.night; document.getElementById('res-icon').innerText = rIcon;
+            document.getElementById('res-count').innerText = state.res; document.getElementById('gold-count').innerText = state.gold;
             
-            // ZMIANA: Użycie zmiennej base-size do obliczeń w JS
-            const baseSize = 220;
-            const cols = 4;
-            const colIdx = state.lvl % cols;
-            const rowIdx = Math.floor(state.lvl / cols);
-            
-            // Używamy ujemnych pikseli do przesunięcia tła
-            const xPos = -(colIdx * baseSize);
-            const yPos = -(rowIdx * baseSize);
-            
+            // Tutaj używamy baseSize=220 dla dużej bazy
+            const baseSize = 220; const cols = 4; const colIdx = state.lvl % cols; const rowIdx = Math.floor(state.lvl / cols);
+            const xPos = -(colIdx * baseSize); const yPos = -(rowIdx * baseSize);
             document.getElementById('base-visual').style.backgroundPosition = `${xPos}px ${yPos}px`;
             
-            document.getElementById('base-name').innerText = lvl.name;
-            document.getElementById('base-def').innerText = lvl.def;
-            let pct = (state.hp / state.maxHp) * 100;
-            document.getElementById('hp-fill').style.width = Math.max(0, pct) + "%";
-            document.getElementById('hp-fill').style.background = pct < 30 ? 'red' : 'var(--c-hp)';
+            document.getElementById('base-name').innerText = lvl.name; document.getElementById('base-def').innerText = lvl.def;
+            let pct = (state.hp / state.maxHp) * 100; document.getElementById('hp-fill').style.width = Math.max(0, pct) + "%"; document.getElementById('hp-fill').style.background = pct < 30 ? 'red' : 'var(--c-hp)'; document.getElementById('hp-text').innerText = `${state.hp}/${state.maxHp}`;
             for(let k in state.inv) document.getElementById('count-'+k).innerText = state.inv[k];
             
-            const next = levels[state.lvl+1];
-            const btn = document.getElementById('btn-build');
-            if(next && state.res >= next.cost) {
-                btn.classList.add('ready');
-                btn.innerText = "⏫ ULEPSZ!";
-            } else {
-                btn.classList.remove('ready');
-                btn.innerText = "🔨 BAZA";
-            }
+            const next = levels[state.lvl+1]; const btn = document.getElementById('btn-build');
+            if(next && state.res >= next.cost) { btn.classList.add('ready'); btn.innerText = "⏫ ULEPSZ!"; } else { btn.classList.remove('ready'); btn.innerText = "⛺ BAZA"; }
         }
 
         showMainMenu();
