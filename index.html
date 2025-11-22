@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Licz na siebie! v25</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --c-hp: #0f0;
+            --c-danger: #ff3333;
+            --c-gold: #ffd700;
+            --c-brain: #2196F3;
+            --bg-day: linear-gradient(180deg, #4a90e2 0%, #87ceeb 100%);
+            --bg-night: radial-gradient(circle, #1a0000 0%, #000000 100%);
+            --wood-dark: #4a2810;
+            --wood-light: #8b4513;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            margin: 0; height: 100vh; width: 100vw; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            touch-action: manipulation; user-select: none;
+        }
+
+        /* GŁÓWNY KONTENER GRY - 9:16 */
+        #main-container {
+            position: relative; width: 100%; height: 100%;
+            aspect-ratio: 9 / 16; max-height: 100vh; max-width: calc(100vh * 9 / 16);
+            background: #000; overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        /* Tła gry */
+        .game-bg {
+            position: absolute; top:0; left:0; width:100%; height:100%; z-index: -1;
+            transition: opacity 0.5s ease; opacity: 0;
+        }
+        #bg-day { background: var(--bg-day); opacity: 1; }
+        #bg-night { background: var(--bg-night); }
+        body.night #bg-day { opacity: 0; }
+        body.night #bg-night { opacity: 1; }
+
+        /* PRZYCISKI DREWNIANE (Kłody) */
+        .wood-btn {
+            font-family: 'VT323', monospace; font-size: 2.2rem;
+            color: #f0e68c; /* Domyślny kolor jasnego drewna */
+            background: linear-gradient(to bottom, var(--wood-light), var(--wood-dark));
+            border: 4px solid #2e1a0a; border-radius: 15px;
+            padding: 15px 20px; margin: 10px 0;
+            cursor: pointer; text-shadow: 2px 2px 4px #000;
+            box-shadow: 0 6px #1a0f05, 0 10px 20px rgba(0,0,0,0.5);
+            width: 85%; text-align: center; position: relative; line-height: 1;
+        }
+        .wood-btn:active { transform: translateY(4px); box-shadow: 0 2px #1a0f05, 0 5px 10px rgba(0,0,0,0.5); }
+        .wood-btn::before {
+            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+            background: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, transparent 2px, rgba(0,0,0,0.05) 4px);
+            border-radius: 12px; pointer-events: none;
+        }
+
+        /* HUD */
+        #hud {
+            display: none; justify-content: space-between; align-items: center;
+            padding: 8px 5px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #555;
+            font-size: 1.3rem; z-index: 10; width: 100%; flex-shrink: 0;
+        }
+        .hud-stat { display: flex; align-items: center; gap: 3px; }
+        #timer-box { font-size: 1.6rem; font-weight: bold; }
+        .night #timer-box { color: var(--c-danger); animation: pulseTime 1s infinite; }
+        .bar-container { width: 50px; height: 12px; background: #333; border: 2px solid #fff; border-radius: 4px; overflow: hidden; position: relative; }
+        #hp-fill { width: 100%; height: 100%; background: var(--c-hp); transition: width 0.2s; }
+        #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
+
+        /* EKRAN GRY */
+        #game-area {
+            flex: 1; position: relative; display: none;
+            flex-direction: column; align-items: center; justify-content: center; overflow: hidden; 
+        }
+        #base-visual { font-size: 6rem; z-index: 2; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+        #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
+        #monster-power {
+            position: absolute; top: 10%; right: 10%; background: #300; border: 2px solid var(--c-danger);
+            color: var(--c-danger); padding: 5px 10px; border-radius: 5px;
+            font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
+        }
+        #monster {
+            width: 150px; height: 150px; position: absolute; top: 15%; opacity: 0; z-index: 4;
+            background-image: url('potwory.png'); background-size: 500% 200%; 
+            image-rendering: pixelated; filter: drop-shadow(0 0 15px rgba(255,0,0,0.7));
+            transition: transform 0.5s linear;
+        }
+        .m-slime { background-position: 0% 0%; } .m-goblin { background-position: 25% 0%; }
+        .m-eye { background-position: 50% 0%; } .m-golem { background-position: 75% 0%; }
+        .m-fire { background-position: 100% 0%; } .m-skeleton { background-position: 0% 100%; }
+        .m-mushroom { background-position: 25% 100%; } .m-spider { background-position: 50% 100%; }
+        .m-ghost { background-position: 75% 100%; } .m-minotaur { background-position: 100% 100%; }
+
+        /* LOOT & NOTIFICATIONS */
+        .dropped-item {
+            position: absolute; font-size: 4rem; cursor: pointer; z-index: 15;
+            animation: bounce 1s infinite alternate; filter: drop-shadow(0 0 15px gold);
+            padding: 20px; margin: -20px; 
+        }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+        .floating-msg {
+            position: absolute; font-size: 2rem; font-weight: bold; color: #fff; 
+            text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 20;
+            animation: floatUpFade 2s forwards; width: 100%; text-align: center;
+            left: 50%; top: 40%; transform: translate(-50%, -50%);
+        }
+        .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
+        @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
+
+        /* DOLNY PANEL */
+        #controls {
+            background: #222; padding: 5px 10px 10px 10px; border-top: 3px solid #555;
+            display: none; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.8); min-height: 340px; flex-shrink: 0;
+        }
+        #math-panel {
+            background: #000; color: var(--c-hp); font-size: 2.2rem; text-align: center;
+            padding: 10px; border: 2px solid var(--c-hp); border-radius: 8px;
+            min-height: 50px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        }
+        #math-panel.locked { filter: blur(2px) grayscale(0.8); border-color: #555 !important; }
+        #inventory-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; height: 55px; transition: opacity 0.3s; }
+        .item-slot {
+            width: 55px; height: 55px; background: #333; border: 2px solid #555; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+            position: relative; cursor: pointer; transition: all 0.1s;
+        }
+        .item-slot:active { transform: scale(0.9); }
+        .item-count {
+            position: absolute; bottom: -5px; right: -5px; background: #fff; color: #000;
+            font-size: 0.9rem; padding: 1px 5px; border-radius: 50%; font-weight: bold;
+        }
+        .day-locked { opacity: 0.5; filter: grayscale(0.8); }
+        .action-row { display: flex; gap: 8px; height: 60px; }
+        .ctrl-btn {
+            font-family: 'VT323', monospace; border: none; border-radius: 6px;
+            font-size: 1.4rem; color: #fff; cursor: pointer;
+            transition: all 0.1s; position: relative; overflow: hidden;
+            line-height: 1.2; flex: 1;
+        }
+        .ctrl-btn:active { transform: translateY(2px); }
+        #btn-gather { background: #4CAF50; border-bottom: 4px solid #2E7D32; }
+        #btn-shop { background: #9C27B0; border-bottom: 4px solid #7B1FA2; }
+        #btn-build { background: #555; border-bottom: 4px solid #333; color: #aaa; }
+        #btn-build.ready { background: var(--c-gold); color: #000; border-bottom: 4px solid #b8860b; animation: pulseGold 1s infinite; font-weight: bold; }
+
+        #keypad { display: none; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 220px; }
+        .key { background: #444; font-size: 2rem; border-radius: 5px; border-bottom: 3px solid #222; flex: 1; font-family: 'VT323'; color:#fff; border:none; border-bottom: 3px solid #222; cursor: pointer;}
+        .key:active { border-bottom: 0; transform:translateY(3px); }
+        .key-ok { background: #2196F3; border-color: #0D47A1; }
+        .key-fix { background: #FF9800; border-color: #E65100; font-size: 1.5rem; }
+        #keypad.inactive { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+
+        /* EKRANY SPECJALNE */
+        .special-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 200; display: none; 
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px;
+        }
+        
+        /* NOWE MENU GŁÓWNE */
+        #main-menu-screen {
+            background-color: #111;
+            background-image: url('backgroundmenu.png');
+            background-size: cover; background-position: center;
+            z-index: 300;
+            justify-content: flex-end; /* Przyciski na dole */
+            padding-bottom: 60px; /* Odstęp od dołu */
+        }
+        
+        /* Kontener Tytułu */
+        .title-container {
+            position: relative; margin-bottom: 50px;
+            transform: rotate(-5deg); /* Lekki przechył */
+        }
+
+        #main-menu-screen h1 {
+            font-size: 5rem; margin: 0; color: var(--c-gold);
+            text-shadow: 4px 4px 0 #000, -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000;
+            line-height: 0.9;
+        }
+
+        .subtitle {
+            position: absolute; bottom: -25px; right: -10px;
+            font-size: 2rem; color: var(--c-danger);
+            text-shadow: 2px 2px 0 #000;
+            transform: rotate(-10deg); /* Przechył podtytułu */
+            background: rgba(0,0,0,0.5); padding: 2px 10px; border-radius: 5px;
+        }
+        
+        /* EKRAN WYBORU TRUDNOŚCI */
+        #difficulty-screen { background: rgba(0,0,0,0.95); z-index: 250; }
+        
+        #era-screen { background: linear-gradient(45deg, #332b00, #000); border: 5px solid var(--c-gold); }
+        #era-icon { font-size: 7rem; margin-bottom: 20px; animation: bounce 1s infinite; }
+        #night-screen { background: linear-gradient(180deg, #001133 0%, #000000 100%); border: 5px solid #2196F3; }
+        #game-over-screen { background: #000; border: 5px solid red; overflow-y: auto;}
+        
+        #mistakes-list { text-align: left; margin-top: 10px; font-size: 1.3rem; color: #ffaaaa; }
+        
+        .btn-next, .close-btn {
+            font-size: 1.5rem; padding: 12px 30px; border-radius: 8px; margin-top: 20px; cursor: pointer;
+            flex-grow: 0; width: auto; align-self: center; font-family: 'VT323'; border:none;
+        }
+        .btn-next { background: #2196F3; color: #fff; box-shadow: 0 4px #0D47A1; }
+        .btn-next:active { transform: translateY(4px); box-shadow: none; }
+        .close-btn { background: #d32f2f; color:#fff; box-shadow: 0 4px #9a0007; }
+
+        /* MODALE */
+        .modal { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 100; display: none; 
+            flex-direction: column; padding: 15px; align-items: stretch; 
+        }
+        .modal h2 { text-align: center; color: #fff; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .card-list { overflow-y: auto; flex: 1; }
+        .card { background: #222; margin-bottom: 10px; padding: 12px; border: 2px solid #444; display: flex; align-items: center; gap: 12px; border-radius: 8px; }
+        .card.affordable { border-color: var(--c-gold); background: #332b00; }
+        .btn-buy { background: var(--c-gold); color: #000; font-weight: bold; padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; flex-grow: 0; font-family:'VT323'; }
+
+        @keyframes pulseTime { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); color: red; } }
+        @keyframes pulseGold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 15px var(--c-gold); } }
+        .shake-screen { animation: shake 0.2s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
+        .flash-red { position:absolute; top:0; left:0; width:100%; height:100%; background:red; opacity:0; pointer-events:none; z-index:50; transition: opacity 0.1s; }
+    </style>
+</head>
+<body>
+
+    <div id="main-container">
+        
+        <div id="bg-day" class="game-bg"></div>
+        <div id="bg-night" class="game-bg"></div>
+        <div id="flash-overlay" class="flash-red"></div>
+
+        <div id="main-menu-screen" class="special-screen" style="display: flex;">
+            <div class="title-container">
+                <h1>LICZ NA SIEBIE!</h1>
+                <div class="subtitle">Zwłaszcza w NOCY!</div>
+            </div>
+            
+            <button class="wood-btn" onclick="mainMenuStartGame()">URUCHOM GRĘ</button>
+            <button class="wood-btn" onclick="showDifficultySelect()">POZIOM TRUDNOŚCI</button>
+            <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000;">Aktualny poziom: <span id="current-diff-label" style="color:var(--c-gold)">ŁATWY</span></div>
+        </div>
+
+        <div id="difficulty-screen" class="special-screen">
+            <h2>WYBIERZ POZIOM</h2>
+            <button class="wood-btn" style="color: #4CAF50" onclick="selectTier(1)">ŁATWY (do 10)</button>
+            <button class="wood-btn" style="color: #FF9800" onclick="selectTier(2)">ŚREDNI (do 20)</button>
+            <button class="wood-btn" style="color: #F44336" onclick="selectTier(3)">TRUDNY (do 50)</button>
+            <button class="wood-btn" style="color: #9C27B0" onclick="selectTier(4)">ULTRA (do 100)</button>
+        </div>
+
+        <div id="era-screen" class="special-screen">
+            <div id="era-icon">🪨</div>
+            <h1 style="color: gold; font-size: 3rem; margin: 10px 0;">NOWA EPOKA!</h1>
+            <p style="font-size: 1.5rem;">Zaczynasz zbierać <span id="era-name">KAMIEŃ</span>.</p>
+            <button class="btn-next" onclick="closeEraScreen()">ROZUMIEM!</button>
+        </div>
+
+        <div id="night-screen" class="special-screen">
+            <div style="font-size: 6rem;">🌅</div>
+            <h1>PRZETRWAŁEŚ!</h1>
+            <p style="font-size: 2rem; margin: 10px 0;">Przetrwałeś <span id="night-summary-val">1 noc</span>.</p>
+            <div id="streak-summary" style="color: gold; font-size: 1.3rem; margin-top: 10px;"></div>
+            <button class="btn-next" onclick="startDay()">DALEJ >></button>
+        </div>
+
+        <div id="game-over-screen" class="special-screen">
+            <h1>GAME OVER</h1>
+            <p style="font-size: 2rem;">Przetrwałeś <span id="final-night">0 nocy</span>.</p>
+            <div id="recommendation" style="color: #2196F3; font-weight: bold; font-size: 1.2rem; margin: 10px 0;"></div>
+            <div id="stats-container" style="background: #222; padding: 15px; width: 90%; border-radius: 10px; margin-top: 10px;">
+                <h3 style="margin:0 0 10px 0; border-bottom:1px solid #555; font-size: 1.2rem; color: #aaa;">ZAPAMIĘTAJ PONIŻSZE RÓWNANIA, ŻEBY PRZETRWAĆ KOLEJNĄ NOC:</h3>
+                <ul id="mistakes-list" style="list-style: none; padding: 0;"><li>Brak błędów! Brawo!</li></ul>
+            </div>
+            <button class="btn-next" style="background: red; box-shadow: 0 4px #9a0007;" onclick="hardReset()">WRÓĆ DO MENU</button>
+        </div>
+
+        <div id="hud">
+            <div class="hud-stat">🌙 <span id="night-val">1</span></div>
+            <div class="hud-stat" title="Seria poprawnych">🧠 <div class="bar-container"><div id="prog-fill"></div></div></div>
+            <div class="hud-stat"><span id="res-icon">🌲</span> <span id="res-count" style="color:orange">0</span></div>
+            <div class="hud-stat">💰 <span id="gold-count" style="color:gold">0</span></div>
+            <div id="timer-box">60s</div>
+            <div class="hud-stat">❤️ <div class="bar-container" style="width:80px;"><div id="hp-fill"></div></div></div>
+        </div>
+
+        <div id="game-area">
+            <div id="monster-power">⚔️ ATAK: <span id="m-dmg">0</span></div>
+            <div id="monster"></div> <div id="base-visual">⛺</div>
+            <div id="base-info">
+                <div id="base-name" style="font-size: 1.2rem; font-weight:bold;">Namiot</div>
+                <div style="color:#ccc; font-size:0.9rem;">🛡️ Pancerz: <span id="base-def">1</span></div>
+            </div>
+        </div>
+
+        <div id="build-menu" class="modal">
+            <h2>ULEPSZ BAZĘ</h2>
+            <div id="build-list" class="card-list"></div>
+            <button class="close-btn" onclick="closeModals()">ZAMKNIJ</button>
+        </div>
+
+        <div id="shop-menu" class="modal">
+            <h2>SKLEP</h2>
+            <div id="shop-list" class="card-list"></div>
+            <button class="close-btn" onclick="closeModals()">ZAMKNIJ</button>
+        </div>
+
+        <div id="controls">
+            <div id="math-panel">Gotowy?</div>
+            <div id="inventory-bar" class="day-locked">
+                <div class="item-slot" id="slot-potion" onclick="useItem('potion')">💊 <div class="item-count" id="count-potion">1</div></div>
+                <div class="item-slot" id="slot-bomb" onclick="useItem('bomb')">💣 <div class="item-count" id="count-bomb">0</div></div>
+                <div class="item-slot" id="slot-shield" onclick="useItem('shield')">🛡️ <div class="item-count" id="count-shield">0</div></div>
+                <div class="item-slot" id="slot-laser" onclick="useItem('laser')" style="border-color: #2196F3">⚡ <div class="item-count" id="count-laser">0</div></div>
+            </div>
+            <div id="action-buttons" class="action-row">
+                <button class="ctrl-btn" id="btn-gather" onclick="startGatherTask()">⛏️ ZBIERAJ</button>
+                <button class="ctrl-btn" id="btn-shop" onclick="openShop()">🛒 SKLEP</button>
+                <button class="ctrl-btn" id="btn-build" onclick="openBuild()">🔨 BAZA</button>
+            </div>
+            <div id="keypad">
+                <button class="key" onclick="input(1)">1</button><button class="key" onclick="input(2)">2</button><button class="key" onclick="input(3)">3</button>
+                <button class="key" onclick="input(4)">4</button><button class="key" onclick="input(5)">5</button><button class="key" onclick="input(6)">6</button>
+                <button class="key" onclick="input(7)">7</button><button class="key" onclick="input(8)">8</button><button class="key" onclick="input(9)">9</button>
+                <button class="key key-fix" onclick="clearInput()">POPRAW</button><button class="key" onclick="input(0)">0</button><button class="key key-ok" onclick="checkAnswer()">OK</button>
+            </div>
+        </div>
+
+    </div> <script>
+        const levels = [
+            { lvl: 1, name: "Namiot", res: "wood", cost: 0, icon: "⛺", hp: 120, def: 1 },
+            { lvl: 2, name: "Palisada", res: "wood", cost: 20, icon: "⛺🚧", hp: 180, def: 2 },
+            { lvl: 3, name: "Chatka", res: "wood", cost: 40, icon: "🛖", hp: 300, def: 4 },
+            { lvl: 4, name: "Dom", res: "stone", cost: 30, icon: "🏠", hp: 450, def: 8 },
+            { lvl: 5, name: "Zamek", res: "stone", cost: 80, icon: "🏰", hp: 700, def: 16 },
+            { lvl: 6, name: "Bunkier", res: "metal", cost: 60, icon: "🏢", hp: 1200, def: 28 },
+            { lvl: 7, name: "Stalowa Forteca", res: "metal", cost: 150, icon: "🏯", hp: 2500, def: 45 }
+        ];
+
+        const items = {
+            potion: { name: "Apteczka", cost: 50, icon: "💊", desc: "+50 HP" },
+            bomb:   { name: "Dynamit",  cost: 100, icon: "💣", desc: "Zabija potwora" },
+            shield: { name: "Tarcza",   cost: 80, icon: "🛡️", desc: "Blok (5s)" }
+        };
+
+        const monsterTypes = ['m-slime', 'm-goblin', 'm-eye', 'm-golem', 'm-fire', 'm-skeleton', 'm-mushroom', 'm-spider', 'm-ghost', 'm-minotaur'];
+
+        const mathConfig = {
+            1: { max: 10, label: "ŁATWY" },
+            2: { max: 20, label: "ŚREDNI" },
+            3: { max: 50, label: "TRUDNY" },
+            4: { max: 100, label: "ULTRA" }
+        };
+
+        let state = {
+            res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60,
+            isShielded: false, inv: { potion: 1, bomb: 0, shield: 0, laser: 0 }, 
+            inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null,
+            mathTier: 1, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
+        };
+
+        let math = { a:0, b:0, res:0, inp:"" };
+        let selectedTier = 1;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq, type='sine', dur=0.1) {
+            if(audioCtx.state==='suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = type; o.frequency.value = freq;
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+            o.start(); o.stop(audioCtx.currentTime+dur);
+        }
+
+        function showMainMenu() {
+            document.getElementById('main-menu-screen').style.display = 'flex';
+            document.getElementById('difficulty-screen').style.display = 'none';
+            updateDiffLabel();
+        }
+
+        function showDifficultySelect() {
+            document.getElementById('main-menu-screen').style.display = 'none';
+            document.getElementById('difficulty-screen').style.display = 'flex';
+        }
+
+        function selectTier(tier) {
+            selectedTier = tier;
+            showMainMenu(); 
+        }
+
+        function updateDiffLabel() {
+             document.getElementById('current-diff-label').innerText = mathConfig[selectedTier].label;
+        }
+
+        function mainMenuStartGame() {
+            startGame(selectedTier);
+        }
+
+        function startGame(tier) {
+            state.mathTier = tier;
+            document.getElementById('main-menu-screen').style.display = 'none';
+            document.body.classList.remove('night'); 
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('game-area').style.display = 'flex';
+            document.getElementById('controls').style.display = 'flex';
+            init();
+        }
+
+        function init() {
+            updateUI();
+            startDay();
+            state.intervalId = setInterval(() => {
+                if (state.timeLeft > 0) {
+                    state.timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    switchPhase();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const tBox = document.getElementById('timer-box');
+            tBox.innerText = (state.phase==='day' ? '☀️' : '🌙') + ' ' + state.timeLeft + 's';
+            tBox.style.color = state.timeLeft <= 10 ? 'red' : '#fff';
+        }
+
+        function switchPhase() {
+            if(state.phase === 'day') startNight();
+            else showNightScreen();
+        }
+
+        function getWordForm(n, forms) {
+            if (n === 1) return forms[0];
+            if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return forms[1];
+            return forms[2];
+        }
+
+        function showNightScreen() {
+            stopDamage();
+            const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']);
+            document.getElementById('night-summary-val').innerText = `${state.night} ${nightWord}`;
+            
+            const streakSummary = document.getElementById('streak-summary');
+            if(state.completedStreaks > 0) {
+                streakSummary.innerText = `Ilość bezbłędnych serii: ${state.completedStreaks}`;
+            } else {
+                streakSummary.innerText = "";
+            }
+
+            document.getElementById('night-screen').style.display = 'flex';
+            beep(600, 'sine', 0.5);
+        }
+
+        function showNotification(text, isGold = false) {
+            const float = document.createElement('div');
+            float.className = isGold ? 'floating-msg msg-gold' : 'floating-msg';
+            float.innerText = text;
+            document.body.appendChild(float);
+            setTimeout(()=>float.remove(), 2000);
+        }
+
+        function startDay() {
+            document.getElementById('night-screen').style.display = 'none'; 
+            state.phase = 'day';
+            state.timeLeft = 60;
+            document.body.classList.remove('night');
+            document.getElementById('inventory-bar').classList.add('day-locked');
+            document.getElementById('monster-power').style.opacity = 0;
+            stopDamage();
+
+            if(state.activeMath) {
+                closeMath(); 
+            }
+
+            document.getElementById('action-buttons').style.display = 'flex';
+            document.getElementById('keypad').style.display = 'none'; 
+            document.getElementById('math-panel').innerText = "ZBIERAJ SUROWCE!";
+            document.getElementById('math-panel').style.borderColor = "var(--c-hp)";
+            state.hp = Math.min(state.hp + 30, state.maxHp); 
+            updateUI();
+        }
+
+        function startNight() {
+            closeModals();
+            state.phase = 'night';
+            state.timeLeft = 60;
+            state.night++;
+            document.body.classList.add('night');
+            document.getElementById('inventory-bar').classList.remove('day-locked');
+            document.getElementById('action-buttons').style.display = 'none';
+            document.getElementById('keypad').style.display = 'grid';
+            document.getElementById('keypad').classList.add('inactive');
+            document.getElementById('math-panel').innerText = "NOC NADCHODZI...";
+            beep(150, 'sawtooth', 1.0);
+            updateUI();
+            spawnMonsterLoop();
+        }
+
+        function startGatherTask() {
+            state.activeMath = true;
+            state.mathMode = 'gather';
+            document.getElementById('action-buttons').style.display = 'none';
+            document.getElementById('keypad').style.display = 'grid';
+            unlockInput();
+            generateMath();
+        }
+
+        function spawnMonsterLoop() {
+            if(state.phase !== 'night') return;
+            lockInput("Czekaj...");
+            setTimeout(() => {
+                if(state.phase === 'night') monsterAttack();
+            }, Math.random() * 1500 + 1000);
+        }
+
+        function monsterAttack() {
+            state.activeMath = true;
+            state.mathMode = 'defend';
+            unlockInput();
+
+            const m = document.getElementById('monster');
+            m.className = ''; 
+            const randomMonster = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+            m.classList.add(randomMonster);
+            m.style.opacity = 1;
+            m.style.transition = "none";
+            m.style.transform = "scale(1)";
+            setTimeout(() => {
+                m.style.transition = "transform 8s linear";
+                m.style.transform = "scale(3)";
+            }, 50);
+
+            generateMath();
+            document.getElementById('math-panel').style.borderColor = "red";
+
+            let power = 5 + (state.night * 6); 
+            let def = levels[state.lvl].def;
+            let dmg = Math.max(Math.ceil(power * 0.1), power - def);
+
+            const pwrDiv = document.getElementById('monster-power');
+            pwrDiv.innerHTML = `⚔️ ATAK: ${dmg}`;
+            pwrDiv.style.opacity = 1;
+
+            clearInterval(state.dmgInterval);
+            state.dmgInterval = setInterval(() => {
+                if(!state.isShielded) takeDamage(dmg);
+            }, 1200);
+        }
+
+        function takeDamage(amt) {
+            state.hp -= amt;
+            updateUI();
+            document.getElementById('game-area').classList.add('shake-screen');
+            document.getElementById('flash-overlay').style.opacity = 0.3;
+            setTimeout(() => {
+                document.getElementById('game-area').classList.remove('shake-screen');
+                document.getElementById('flash-overlay').style.opacity = 0;
+            }, 100);
+            beep(80, 'sawtooth', 0.1);
+            if(state.hp <= 0) gameOver();
+        }
+
+        function gameOver() {
+            clearInterval(state.dmgInterval);
+            clearInterval(state.intervalId);
+            
+            const nightWord = getWordForm(state.night, ['noc', 'noce', 'nocy']);
+            document.getElementById('final-night').innerText = `${state.night} ${nightWord}`;
+            
+            const rec = document.getElementById('recommendation');
+            if (state.completedStreaks > 0 && state.mathTier < 4) {
+                let nextLabel = mathConfig[state.mathTier + 1].label;
+                rec.innerText = `Świetnie ci idzie! Ilość bezbłędnych serii: ${state.completedStreaks}. Spróbuj poziomu: ${nextLabel}!`;
+            } else {
+                rec.innerText = "";
+            }
+
+            const list = document.getElementById('mistakes-list');
+            list.innerHTML = "";
+            if(state.mistakes.length === 0) list.innerHTML = "<li>Brak błędów! Brawo!</li>";
+            else {
+                const uniqueMistakes = [...new Set(state.mistakes)];
+                uniqueMistakes.forEach(m => {
+                    const li = document.createElement('li');
+                    li.innerText = m;
+                    list.appendChild(li);
+                });
+            }
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+
+        function hardReset() {
+            state = {
+                res: 0, gold: 0, hp: 120, maxHp: 120, lvl: 0, night: 1, phase: "day", timeLeft: 60,
+                isShielded: false, inv: { potion: 1, bomb: 0, shield: 0, laser: 0 }, 
+                inputLocked: false, activeMath: false, mathMode: 'none', dmgInterval: null, intervalId: null,
+                mathTier: selectedTier, streak: 0, mistakes: [], completedStreaks: 0, lastA: 0, lastB: 0
+            };
+            
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('night-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+            document.body.classList.remove('night');
+            
+            showMainMenu();
+            
+            document.getElementById('monster').style.opacity = 0;
+            document.getElementById('monster-power').style.opacity = 0;
+            document.querySelectorAll('.dropped-item').forEach(e => e.remove());
+            updateUI();
+        }
+
+        function generateMath() {
+            const maxProd = mathConfig[state.mathTier].max;
+            let limitA = Math.floor(maxProd / 2);
+            if (limitA > 10) limitA = 10; 
+            if (limitA < 2) limitA = 2;
+
+            let a, b;
+            let attempts = 0;
+            do {
+                attempts++;
+                a = Math.floor(Math.random() * (limitA - 1)) + 2;
+                let limitB = Math.floor(maxProd / a);
+                if (limitB > 10) limitB = 10;
+                if (limitB < 2) { a = 2; limitB = Math.floor(maxProd / 2); }
+                b = Math.floor(Math.random() * (limitB - 1)) + 2;
+            } while (a === state.lastA && b === state.lastB && attempts < 20);
+
+            state.lastA = a; state.lastB = b;
+            math.a = a; math.b = b; math.res = a * b;
+            math.inp = "";
+            updateMathDisplay();
+        }
+
+        function updateMathDisplay() {
+            if(state.inputLocked) return;
+            document.getElementById('math-panel').innerText = `${math.a} × ${math.b} = ${math.inp}`;
+        }
+
+        function input(n) { 
+            if(state.inputLocked) return;
+            math.inp += n; 
+            updateMathDisplay(); 
+            beep(600, 'square', 0.05); 
+        }
+        function clearInput() { 
+            if(state.inputLocked) return;
+            math.inp = ""; 
+            updateMathDisplay(); 
+        }
+
+        function checkAnswer() {
+            if(state.inputLocked) return;
+            if(parseInt(math.inp) === math.res) {
+                state.streak++;
+                updateProgression();
+                success();
+            } else {
+                beep(100, 'sawtooth', 0.3);
+                document.getElementById('math-panel').style.borderColor = "red";
+                state.mistakes.push(`${math.a} × ${math.b} = ${math.res}`);
+                state.streak = 0;
+                updateProgression();
+                math.inp = "";
+                updateMathDisplay();
+                setTimeout(()=>document.getElementById('math-panel').style.borderColor="var(--c-hp)", 200);
+            }
+        }
+
+        function updateProgression() {
+            let pct = (state.streak / 5) * 100;
+            if(pct > 100) pct = 100;
+            const bar = document.getElementById('prog-fill');
+            bar.style.width = pct + "%";
+            
+            if(state.streak >= 5) {
+                state.streak = 0;
+                state.completedStreaks++;
+                bar.style.width = "0%";
+                showNotification("+1 SERIA BEZBŁĘDNA!", true);
+                spawnLoot('laser', 1);
+                beep(1000, 'square', 0.1); 
+                setTimeout(() => beep(1500, 'square', 0.2), 150);
+            }
+        }
+
+        function success() {
+            beep(800, 'sine', 0.2);
+            if(state.phase === 'day') {
+                spawnLoot('resource', 5 + state.night); 
+                if(Math.random() < 0.5) spawnLoot('gold', Math.floor(Math.random()*10) + 15);
+                closeMath();
+                document.getElementById('math-panel').innerText = "DOBRA ROBOTA!";
+            } else {
+                stopDamage();
+                spawnLoot('gold', 40 + (state.night * 5));
+                if(Math.random() < 0.3) {
+                    const items = ['potion', 'bomb', 'shield'];
+                    spawnLoot(items[Math.floor(Math.random()*3)], 1);
+                }
+                lockInput("POKONANY!");
+                document.getElementById('monster-power').style.opacity = 0;
+                setTimeout(() => { spawnMonsterLoop(); }, 1200);
+            }
+        }
+
+        function lockInput(msg) {
+            state.inputLocked = true;
+            document.getElementById('math-panel').innerText = msg;
+            document.getElementById('math-panel').classList.add('locked');
+            document.getElementById('keypad').classList.add('inactive');
+        }
+
+        function unlockInput() {
+            state.inputLocked = false;
+            document.getElementById('math-panel').classList.remove('locked');
+            document.getElementById('keypad').classList.remove('inactive');
+            document.getElementById('math-panel').style.borderColor = "var(--c-hp)";
+        }
+
+        function closeMath() {
+            state.activeMath = false;
+            state.mathMode = 'none';
+            state.inputLocked = false;
+            document.getElementById('action-buttons').style.display = 'flex';
+            document.getElementById('keypad').style.display = 'none'; 
+        }
+
+        function spawnLoot(type, amount) {
+            const el = document.createElement('div');
+            el.className = 'dropped-item';
+            let icon = "❓"; let color = "#fff";
+            if(type === 'gold') { icon = "💰"; color="gold"; }
+            else if(type === 'resource') { icon = levels[state.lvl].res === 'wood' ? '🌲' : (levels[state.lvl].res === 'stone' ? '🪨' : '🔩'); color="orange"; }
+            else if(type === 'potion') icon = "💊";
+            else if(type === 'bomb') icon = "💣";
+            else if(type === 'shield') icon = "🛡️";
+            else if(type === 'laser') { icon = "⚡"; color = "#2196F3"; }
+
+            el.innerText = icon;
+            el.style.left = (20 + Math.random() * 60) + '%';
+            el.style.top = (30 + Math.random() * 40) + '%';
+            
+            el.onclick = function(e) {
+                collectLoot(type, amount);
+                const float = document.createElement('div');
+                float.className = 'floating-msg';
+                float.innerText = type === 'gold' ? `+${amount}` : (type === 'resource' ? `+${amount}` : type.toUpperCase());
+                float.style.color = color;
+                document.getElementById('main-container').appendChild(float);
+                setTimeout(()=>float.remove(), 1500);
+                el.remove();
+                beep(1200, 'sine', 0.1);
+            };
+
+            document.getElementById('main-container').appendChild(el);
+            setTimeout(() => { if(el.parentNode) el.remove(); }, 8000);
+        }
+
+        function collectLoot(type, amount) {
+            if(type === 'resource') state.res += amount;
+            else if(type === 'gold') state.gold += amount;
+            else state.inv[type]++;
+            updateUI();
+        }
+
+        function stopDamage() {
+            clearInterval(state.dmgInterval);
+            document.getElementById('monster').style.opacity = 0;
+        }
+
+        function useItem(type) {
+            if(state.phase === 'day') {
+                showNotification("Teraz zdobywaj i kupuj - wykorzystasz je w nocy!");
+                return;
+            }
+            if(state.inv[type] > 0) {
+                state.inv[type]--;
+                if(type === 'potion') state.hp = Math.min(state.hp + 50, state.maxHp);
+                else if(type === 'bomb') { if(state.mathMode==='defend') success(); }
+                else if(type === 'laser') { if(state.mathMode==='defend') success(); }
+                else if(type === 'shield') {
+                    state.isShielded = true;
+                    document.getElementById('game-area').style.border = "5px solid #00e5ff";
+                    setTimeout(()=>{ 
+                        state.isShielded = false; 
+                        document.getElementById('game-area').style.border="none"; 
+                    }, 5000);
+                }
+                updateUI();
+            }
+        }
+
+        function openShop() { renderList('shop-list', items, true); document.getElementById('shop-menu').style.display = 'flex'; }
+        function openBuild() { renderList('build-list', levels, false); document.getElementById('build-menu').style.display = 'flex'; }
+        
+        function renderList(id, data, isShop) {
+            const list = document.getElementById(id);
+            list.innerHTML = "";
+            const entries = isShop ? Object.keys(data) : data;
+
+            entries.forEach((key, i) => {
+                let item, canBuy, isOwned = false, costIcon = "💰";
+                if(isShop) {
+                    item = data[key]; 
+                    canBuy = state.gold >= item.cost;
+                } else {
+                    item = key;
+                    if(i > state.lvl + 1) return;
+                    isOwned = i <= state.lvl;
+                    canBuy = (i === state.lvl + 1) && state.res >= item.cost;
+                    costIcon = item.res === 'wood' ? '🌲' : (item.res === 'stone' ? '🪨' : '🔩');
+                }
+
+                const div = document.createElement('div');
+                div.className = `card ${canBuy ? 'affordable' : ''}`;
+                div.style.opacity = isOwned ? 0.5 : 1;
+                div.innerHTML = `
+                    <div style="font-size:2rem">${item.icon}</div>
+                    <div style="flex:1">
+                        <div style="font-weight:bold">${item.name}</div>
+                        <div style="font-size:0.8rem">${isShop ? item.desc : 'Def: ' + item.def}</div>
+                    </div>
+                    <div>${isOwned ? '✅' : item.cost + costIcon}</div>
+                    ${canBuy ? `<button class="btn-buy" onclick="${isShop ? `buyShop('${key}')` : `upgradeBase(${i})`}">KUP</button>` : ''}
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function buyShop(key) {
+            const item = items[key];
+            if(state.gold >= item.cost) {
+                state.gold -= item.cost;
+                state.inv[key]++;
+                updateUI();
+                openShop(); 
+                beep(600, 'square', 0.2);
+            }
+        }
+
+        function upgradeBase(i) {
+            const next = levels[i];
+            if(state.res >= next.cost) {
+                state.res -= next.cost;
+                state.lvl = i;
+                state.maxHp = next.hp;
+                state.hp = state.maxHp;
+                if(i > 0 && levels[i].res !== levels[i-1].res) {
+                    state.res = 0; 
+                    showEraScreen(levels[i].res);
+                }
+                updateUI();
+                closeModals();
+                beep(600, 'square', 0.5);
+            }
+        }
+
+        function showEraScreen(resName) {
+            let namePL = resName === 'stone' ? "KAMIEŃ" : "METAL";
+            let icon = resName === 'stone' ? "🪨" : "🔩";
+            document.getElementById('era-name').innerText = namePL;
+            document.getElementById('era-icon').innerText = icon;
+            document.getElementById('era-screen').style.display = 'flex';
+        }
+
+        function closeEraScreen() { document.getElementById('era-screen').style.display = 'none'; }
+        function closeModals() { document.getElementById('shop-menu').style.display = 'none'; document.getElementById('build-menu').style.display = 'none'; }
+
+        function updateUI() {
+            const lvl = levels[state.lvl];
+            let rIcon = lvl.res === 'wood' ? '🌲' : (lvl.res === 'stone' ? '🪨' : '🔩');
+            document.getElementById('night-val').innerText = state.night;
+            document.getElementById('res-icon').innerText = rIcon;
+            document.getElementById('res-count').innerText = state.res;
+            document.getElementById('gold-count').innerText = state.gold;
+            document.getElementById('base-visual').innerText = lvl.icon;
+            document.getElementById('base-name').innerText = lvl.name;
+            document.getElementById('base-def').innerText = lvl.def;
+            let pct = (state.hp / state.maxHp) * 100;
+            document.getElementById('hp-fill').style.width = Math.max(0, pct) + "%";
+            document.getElementById('hp-fill').style.background = pct < 30 ? 'red' : 'var(--c-hp)';
+            for(let k in state.inv) document.getElementById('count-'+k).innerText = state.inv[k];
+            
+            const next = levels[state.lvl+1];
+            const btn = document.getElementById('btn-build');
+            if(next && state.res >= next.cost) {
+                btn.classList.add('ready');
+                btn.innerText = "⏫ ULEPSZ!";
+            } else {
+                btn.classList.remove('ready');
+                btn.innerText = "🔨 BAZA";
+            }
+        }
+
+        showMainMenu();
+    </script>
+</body>
+</html>
