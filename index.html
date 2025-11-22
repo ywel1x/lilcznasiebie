@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Licz na siebie! v51.0 (Animacje + Fixy)</title>
+    <title>Licz na siebie! v52.0 (HUD Redesign)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -76,22 +76,51 @@
             border-radius: 12px; pointer-events: none;
         }
 
-        /* --- HUD --- */
+        /* --- NOWY HUD (BEZ TŁA, ROZSTRZELONY) --- */
         #hud {
-            display: none; justify-content: space-between; align-items: center;
-            padding: 8px 5px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #555;
-            font-size: 1.3rem; z-index: 10; width: 100%; flex-shrink: 0;
+            display: none; /* Włączane przez JS */
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            padding: 10px;
+            /* Odsunięcie od góry dla iPhone'ów z notchem */
+            padding-top: max(10px, env(safe-area-inset-top));
+            z-index: 10;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none; /* Kliknięcia przechodzą przez puste miejsca */
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
-        .hud-stat { display: flex; align-items: center; gap: 3px; }
-        #timer-box { font-size: 1.6rem; font-weight: bold; }
+
+        .hud-col-left { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+        .hud-col-center { display: flex; flex-direction: column; gap: 2px; align-items: center; width: 140px; }
+        .hud-col-right { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+
+        .hud-stat { display: flex; align-items: center; gap: 5px; font-size: 1.4rem; font-weight: bold; }
+
+        #timer-box { font-size: 2rem; font-weight: bold; line-height: 1; margin-bottom: 5px; }
         .night #timer-box { color: var(--c-danger); animation: pulseTime 1s infinite; }
         
-        .bar-container { width: 50px; height: 12px; background: #333; border: 2px solid #fff; border-radius: 4px; overflow: hidden; position: relative; }
+        .bar-container { width: 50px; height: 12px; background: #333; border: 2px solid #fff; border-radius: 4px; overflow: hidden; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.8); }
         
-        /* PASEK HP - POPRAWIONY */
-        .hud-bar-thick { height: 24px; width: 130px; position: relative; border: 3px solid #fff; border-radius: 8px; background: #333; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        /* PASEK HP - CENTRUM */
+        .hud-bar-thick { 
+            height: 22px; width: 100%; 
+            position: relative; 
+            border: 2px solid #fff; border-radius: 6px; 
+            background: rgba(0,0,0,0.6); 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.8); 
+        }
         #hp-fill { height: 100%; background: var(--c-hp); transition: width 0.2s; }
-        #hp-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center; line-height: 1; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; z-index: 2; letter-spacing: 1px; }
+        #hp-text { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); width: 100%; 
+            text-align: center; line-height: 1; 
+            font-size: 1rem; font-weight: bold; 
+            z-index: 2; letter-spacing: 1px; 
+            text-shadow: 1px 1px 2px #000;
+        }
 
         #prog-fill { width: 0%; height: 100%; background: var(--c-brain); transition: width 0.3s; }
 
@@ -112,19 +141,21 @@
             z-index: 2; 
             filter: drop-shadow(0 5px 15px rgba(0,0,0,0.6));
             transition: transform 0.2s;
-            margin-top: 80px; 
+            /* Przesunięcie w dół, bo nie ma paska HUD */
+            margin-top: 40px; 
         }
         
-        #base-info { background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:8px; margin-top:-10px; text-align:center; z-index:2; }
+        /* USUNIĘTO #base-info - zgodnie z prośbą */
+        
         #monster-power {
-            position: absolute; top: 10%; right: 10%; background: #300; border: 2px solid var(--c-danger);
+            position: absolute; top: 15%; right: 5%; background: #300; border: 2px solid var(--c-danger);
             color: var(--c-danger); padding: 5px 10px; border-radius: 5px;
             font-size: 1.2rem; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 5;
         }
         
         #monster {
             width: 25vh; height: 25vh; max-width: 150px; max-height: 150px;
-            position: absolute; top: 15%; opacity: 0; z-index: 4;
+            position: absolute; top: 20%; opacity: 0; z-index: 4;
             background-image: url('potwory.png'); 
             background-size: 500% 200%; 
             image-rendering: pixelated; filter: drop-shadow(0 0 15px rgba(255,0,0,0.7));
@@ -156,7 +187,7 @@
         .msg-gold { color: gold; font-size: 2.5rem; text-shadow: 0 0 10px gold; }
         @keyframes floatUpFade { 0% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -150%); opacity: 0; } }
 
-        /* --- NOWA ANIMACJA ZAKUPU --- */
+        /* --- ANIMACJA ZAKUPU --- */
         .ui-feedback {
             position: fixed;
             font-size: 1.8rem; font-weight: bold; color: #0f0;
@@ -282,7 +313,6 @@
         .menu-sprite {
             width: 60px; height: 60px;
             background-image: url('base_sprites.png');
-            /* SKALOWANIE DO IKONY */
             background-size: 400% 200%;
             background-repeat: no-repeat;
             image-rendering: pixelated;
@@ -318,7 +348,7 @@
             <div style="margin-top: 20px; color: #ccc; text-shadow: 1px 1px 2px #000; font-size: 1.2rem;">
                 Autorzy: <span style="color:var(--c-gold)">Alan Lewe i Sebastian Lewe</span>
             </div>
-            <div class="app-version">v51.0 (ANIMATIONS + ICON FIX)</div>
+            <div class="app-version">v52.0 (HUD REDESIGN)</div>
             <div style="position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.3); font-family: sans-serif;">
                 Wszystkie prawa zastrzeżone | 2025 Koszalin
             </div>
@@ -353,23 +383,32 @@
         </div>
 
         <div id="hud">
-            <div class="hud-stat">🌙 <span id="night-val">1</span></div>
-            <div class="hud-stat" title="Seria poprawnych">🧠 <div class="bar-container"><div id="prog-fill"></div></div></div>
-            <div class="hud-stat"><span id="res-icon">🪵</span> <span id="res-count" style="color:orange">0</span></div>
-            <div class="hud-stat">💰 <span id="gold-count" style="color:gold">0</span></div>
-            <div id="timer-box">60s</div>
-            <div class="hud-stat">❤️ <div class="hud-bar-thick"><div id="hp-fill"></div><div id="hp-text">120/120</div></div></div>
+            <div class="hud-col-left">
+                <div class="hud-stat">🌙 <span id="night-val">1</span></div>
+                <div class="hud-stat"><span id="res-icon">🪵</span> <span id="res-count" style="color:orange">0</span></div>
+                <div class="hud-stat">💰 <span id="gold-count" style="color:gold">0</span></div>
+            </div>
+
+            <div class="hud-col-center">
+                <div id="timer-box">60s</div>
+                <div class="hud-bar-thick">
+                    <div id="hp-fill"></div>
+                    <div id="hp-text">120/120</div>
+                </div>
+            </div>
+
+            <div class="hud-col-right">
+                <div class="hud-stat" title="Seria poprawnych">
+                    🧠 <div class="bar-container"><div id="prog-fill"></div></div>
+                </div>
+            </div>
         </div>
 
         <div id="game-area">
             <div id="monster-power">⚔️ ATAK: <span id="m-dmg">0</span></div>
             <div id="monster"></div> 
             <div id="base-visual"></div>
-            <div id="base-info">
-                <div id="base-name" style="font-size: 1.2rem; font-weight:bold;">Namiot</div>
-                <div style="color:#ccc; font-size:0.9rem;">🛡️ Pancerz: <span id="base-def">1</span></div>
             </div>
-        </div>
 
         <div id="build-menu" class="modal">
             <h2>ULEPSZ OBÓZ</h2>
@@ -538,7 +577,6 @@
             document.body.appendChild(float); setTimeout(()=>float.remove(), 2000);
         }
         
-        // --- NOWA FUNKCJA ANIMACJI UI ---
         function showUIFeedback(element, text, color='#0f0') {
             const rect = element.getBoundingClientRect();
             const el = document.createElement('div');
@@ -547,7 +585,6 @@
             el.style.color = color;
             el.style.left = (rect.left + rect.width/2) + 'px';
             el.style.top = (rect.top) + 'px';
-            // Wycentrowanie
             el.style.transform = "translate(-50%, 0)";
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 800);
@@ -683,14 +720,12 @@
                 if(isShop) { item = data[key]; if(item.buyable === false) return; canBuy = state.gold >= item.cost; } 
                 else { item = key; if(i > state.lvl + 1) return; isOwned = i <= state.lvl; canBuy = (i === state.lvl + 1) && state.res >= item.cost; costIcon = item.res === 'wood' ? '🪵' : (item.res === 'stone' ? '🪨' : '🔩'); }
                 
-                // NAPRAWIONO IKONY W MENU (użycie 60px zamiast 220px)
                 const menuSize = 60; 
                 const cols = 4; const colIdx = i % cols; const rowIdx = Math.floor(i / cols);
                 const xPos = -(colIdx * menuSize); const yPos = -(rowIdx * menuSize);
                 let iconHtml = isShop ? `<div style="font-size:2rem">${item.icon}</div>` : `<div class="menu-sprite" style="background-position: ${xPos}px ${yPos}px;"></div>`;
 
                 const div = document.createElement('div'); div.className = `card ${canBuy ? 'affordable' : ''}`; div.style.opacity = isOwned ? 0.5 : 1;
-                // DODANO 'this' DO ONCLICK ABY ZŁAPAĆ PRZYCISK DLA ANIMACJI
                 div.innerHTML = `
                     ${iconHtml}
                     <div style="flex:1"> <div style="font-weight:bold">${item.name}</div> <div style="font-size:0.8rem">${isShop ? item.desc : 'Def: ' + item.def}</div> </div>
@@ -705,7 +740,7 @@
             const item = items[key];
             if(state.gold >= item.cost) {
                 state.gold -= item.cost; state.inv[key]++; updateUI(); 
-                showUIFeedback(btn, "+1"); // Animacja
+                showUIFeedback(btn, "+1"); 
                 openShop(); SoundSystem.playSFX('ui'); 
             }
         }
@@ -715,7 +750,7 @@
             if(state.res >= next.cost) {
                 state.res -= next.cost; state.lvl = i; state.maxHp = next.hp; state.hp = state.maxHp;
                 updateUI(); 
-                showUIFeedback(btn, "ULEPSZONO!", "#fff"); // Animacja
+                showUIFeedback(btn, "ULEPSZONO!", "#fff"); 
                 closeModals(); SoundSystem.playSFX('win'); 
             }
         }
@@ -727,12 +762,12 @@
             document.getElementById('night-val').innerText = state.night; document.getElementById('res-icon').innerText = rIcon;
             document.getElementById('res-count').innerText = state.res; document.getElementById('gold-count').innerText = state.gold;
             
-            // Tutaj używamy baseSize=220 dla dużej bazy
             const baseSize = 220; const cols = 4; const colIdx = state.lvl % cols; const rowIdx = Math.floor(state.lvl / cols);
             const xPos = -(colIdx * baseSize); const yPos = -(rowIdx * baseSize);
             document.getElementById('base-visual').style.backgroundPosition = `${xPos}px ${yPos}px`;
             
-            document.getElementById('base-name').innerText = lvl.name; document.getElementById('base-def').innerText = lvl.def;
+            // USUNIĘTO AKTUALIZACJĘ BASE-INFO (ponieważ usunęliśmy te elementy z HTML)
+            
             let pct = (state.hp / state.maxHp) * 100; document.getElementById('hp-fill').style.width = Math.max(0, pct) + "%"; document.getElementById('hp-fill').style.background = pct < 30 ? 'red' : 'var(--c-hp)'; document.getElementById('hp-text').innerText = `${state.hp}/${state.maxHp}`;
             for(let k in state.inv) document.getElementById('count-'+k).innerText = state.inv[k];
             
